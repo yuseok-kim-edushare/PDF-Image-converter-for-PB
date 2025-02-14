@@ -1,0 +1,125 @@
+name: Continuous Deployment
+on:
+  workflow_run:
+    workflows: ["CI tests"]
+    types:
+      - completed
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+  discussions: write
+
+jobs:
+  deploy:
+    # Only run if CI workflow was successful
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-tags: true
+        fetch-depth: 0
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.sln*', '**/*.csproj*') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: nuget restore PdfToImageConverter.csproj -ConfigFile nuget.config
+      
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Build solution for release (without tests)
+      run: |
+        dotnet publish PdfToImageConverter.csproj --configuration Release
+
+    - name: Install ILRepack
+      run: |
+        nuget install ILRepack -Version 2.0.18 -OutputDirectory ${{ github.workspace }}\packages
+
+    - name: Merge DLLs
+      run: |
+        ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter-Merged.dll `
+        /lib:${{ github.workspace }}\bin\Release\net481\publish `
+        /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework64\v4.0.30319" `
+        /union `
+        /copyattrs `
+        /internalize `
+        ${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter.dll `
+        ${{ github.workspace }}\bin\Release\net481\publish\PdfiumViewer.dll
+
+    - name: Prepare Release Files
+      run: |
+        mkdir ${{ github.workspace }}\release-files -Force
+        # Copy merged DLL
+        Copy-Item ${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter-Merged.dll ${{ github.workspace }}\release-files\PdfToImageConverter.dll
+        # Copy native dependencies
+        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x86 -Destination ${{ github.workspace }}\release-files\x86 -Recurse
+        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x64 -Destination ${{ github.workspace }}\release-files\x64 -Recurse
+        # Create ZIP with all files
+        Compress-Archive -Path ${{ github.workspace }}\release-files\* -DestinationPath ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
+        
+    - name: Get latest release version and Generate release notes
+      id: get_latest_release
+      run: |
+        try {
+          $latest_release = (Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest").tag_name
+          Write-Output "Latest release version: $latest_release"
+          echo "latest_release=$latest_release" >> $env:GITHUB_ENV
+          $versionParts = $latest_release.Split('.')
+          $versionParts[-1] = [int]$versionParts[-1] + 1
+          $newVersionString = $versionParts -join '.'
+          
+          $releaseNotes = "## Changes in " + $latest_release + "`n"
+          $releaseNotes += (git log HEAD ^$latest_release --oneline) -join "`n"
+          $releaseNotes += "`n"
+          $releaseNotes += "### File edited `n"
+          $releaseNotes += "`n"
+          $releaseNotes += (git diff HEAD ^$latest_release --compact-summary) -join "`n"
+        } catch {
+          Write-Output "No previous release found. Creating initial release 0.0.1"
+          $newVersionString = "0.0.1"
+          
+          $releaseNotes = "## Initial Release v0.0.1`n"
+          $releaseNotes += (git log --oneline) -join "`n"
+          $releaseNotes += "`n"
+          $releaseNotes += "### Files included `n"
+          $releaseNotes += "`n"
+          $releaseNotes += (git ls-files | ForEach-Object { "Added $_" }) -join "`n"
+        }
+        
+        echo "new_release=$newVersionString" >> $env:GITHUB_ENV
+        $releaseNotes | Out-File -FilePath releaseNotes.txt -Encoding utf8
+        $releaseNotesContent = Get-Content -Path releaseNotes.txt -Raw
+        echo "release_notes<<EOF" >> $env:GITHUB_ENV
+        echo "$releaseNotesContent" >> $env:GITHUB_ENV
+        echo "EOF" >> $env:GITHUB_ENV
+
+    - name: Explicit Version Order apply to create release
+      run: |
+        $latestCommitMessage = (git log -1 --pretty=%B)
+        foreach ($line in $latestCommitMessage) {
+          if ($line -match "Update Version to (\d+\.\d+\.\d+)") {
+            $messageParts = $line -split ' '
+            $lastPart = $messageParts[-1]
+            echo "new_release=$lastPart" >> $env:GITHUB_ENV
+          }
+        }
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
+        tag_name: ${{ env.new_release }}
+        name: ${{ env.new_release }}
+        body: ${{ env.release_notes }}
+
