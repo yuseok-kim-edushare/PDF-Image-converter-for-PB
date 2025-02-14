@@ -61,7 +61,9 @@ jobs:
         mkdir ${{ github.workspace }}\release-files -Force
         # Copy merged DLL
         Copy-Item ${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter-Merged.dll ${{ github.workspace }}\release-files\PdfToImageConverter.dll
+
         # Copy native dependencies
+        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\nl -Destination ${{ github.workspace }}\release-files\nl -Recurse
         Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x86 -Destination ${{ github.workspace }}\release-files\x86 -Recurse
         Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x64 -Destination ${{ github.workspace }}\release-files\x64 -Recurse
         # Create ZIP with all files
