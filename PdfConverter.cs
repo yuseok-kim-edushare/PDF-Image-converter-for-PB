@@ -10,7 +10,7 @@ namespace PdfToImageConverter
     [ComVisible(true)]
     [Guid("A8B9E0C1-D513-4D8A-B11F-4A10E3D0C1A8")]
     [ClassInterface(ClassInterfaceType.None)]
-    public class PdfConverter
+    public static class PdfConverter
     {
         private static void EnsureDirectoryExists(string filePath)
         {
