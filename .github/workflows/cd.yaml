@@ -41,31 +41,16 @@ jobs:
       run: |
         dotnet publish PdfToImageConverter.csproj --configuration Release
 
-    - name: Install ILRepack
-      run: |
-        nuget install ILRepack -Version 2.0.18 -OutputDirectory ${{ github.workspace }}\packages
-
-    - name: Merge DLLs
-      run: |
-        ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter-Merged.dll `
-        /lib:${{ github.workspace }}\bin\Release\net481\publish `
-        /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework64\v4.0.30319" `
-        /union `
-        /copyattrs `
-        /internalize `
-        ${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter.dll `
-        ${{ github.workspace }}\bin\Release\net481\publish\PdfiumViewer.dll
-
     - name: Prepare Release Files
       run: |
         mkdir ${{ github.workspace }}\release-files -Force
         # Copy merged DLL
-        Copy-Item ${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter-Merged.dll ${{ github.workspace }}\release-files\PdfToImageConverter.dll
+        Copy-Item ${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter.dll ${{ github.workspace }}\release-files\PdfToImageConverter.dll
 
         # Copy native dependencies
-        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\nl -Destination ${{ github.workspace }}\release-files\nl -Recurse
-        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x86 -Destination ${{ github.workspace }}\release-files\x86 -Recurse
-        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x64 -Destination ${{ github.workspace }}\release-files\x64 -Recurse
+        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\PdfiumViewer.dll ${{ github.workspace }}\release-files\PdfiumViewer.dll
+        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\nl -Destination ${{ github.workspace }}\release-files\ -Recurse
+        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x64 -Destination ${{ github.workspace }}\release-files\ -Recurse
         # Create ZIP with all files
         Compress-Archive -Path ${{ github.workspace }}\release-files\* -DestinationPath ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
         
