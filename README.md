@@ -16,7 +16,6 @@ This is a .NET library that converts PDF files to PNG images while maintaining t
    - Visual Studio 2019 or later for building the library
    - .NET 8 SDK for building the library
 - PowerBuilder 2019 R3 or later
-- 64-bit Windows OS only
 
 ## Building the Library
 
