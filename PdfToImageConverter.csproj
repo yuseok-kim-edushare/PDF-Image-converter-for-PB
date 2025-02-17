@@ -10,6 +10,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PDFsharp" Version="6.1.1" />
+    <PackageReference Include="PdfSharp" Version="1.50.5147" />
   </ItemGroup>
 </Project> 
