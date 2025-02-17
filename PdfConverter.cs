@@ -64,6 +64,7 @@ namespace PdfToImageConverter
         }
 
         [ComVisible(true)]
+        [DispId(1)]
         public string ConvertPdfToImage(string pdfPath, string outputPath, int dpi = 300)
         {
             try
