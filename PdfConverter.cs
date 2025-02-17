@@ -39,7 +39,7 @@ namespace PdfToImageConverter
 
                 if (!File.Exists(pdfPath))
                 {
-                    return $"Error: PDF file not found at path: {pdfPath}";
+                    return "Error: PDF file not found at path: " + pdfPath;
                 }
 
                 // Ensure output directory exists before proceeding
@@ -101,7 +101,7 @@ namespace PdfToImageConverter
                                         string extension = Path.GetExtension(outputPath);
                                         string fileNameWithoutExt = Path.GetFileNameWithoutExtension(outputPath);
                                         string directory = Path.GetDirectoryName(outputPath);
-                                        pageOutputPath = Path.Combine(directory, $"{fileNameWithoutExt}_page{pageNumber + 1}{extension}");
+                                        pageOutputPath = Path.Combine(directory, fileNameWithoutExt + "_page" + (pageNumber + 1).ToString() + extension);
                                         
                                         // Ensure directory exists for multi-page output
                                         EnsureDirectoryExists(pageOutputPath);
@@ -119,7 +119,7 @@ namespace PdfToImageConverter
             }
             catch (Exception ex)
             {
-                return $"Error: {ex.GetType().Name} - {ex.Message}";
+                return "Error: " + ex.GetType().Name + " - " + ex.Message;
             }
         }
     }
