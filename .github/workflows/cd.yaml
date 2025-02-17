@@ -58,7 +58,7 @@ jobs:
       id: get_latest_release
       run: |
         try {
-          $latest_release = (Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest").tag_name
+          $latest_release = $(git describe --tags --abbrev=0)
           Write-Output "Latest release version: $latest_release"
           echo "latest_release=$latest_release" >> $env:GITHUB_ENV
           $versionParts = $latest_release.Split('.')
