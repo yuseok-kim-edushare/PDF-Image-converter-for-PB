@@ -18,7 +18,7 @@ namespace PdfToImageConverter
 
     [ComVisible(true)]
     [Guid("02FCF9B4-E978-4FE0-B5F3-F66F11B30AE7")]
-    [ClassInterface(ClassInterfaceType.None)]
+    [ClassInterface(ClassInterfaceType.AutoDual)]
     [ComDefaultInterface(typeof(IPdfConverter))]
     [ProgId("PdfToImageConverter.PdfConverter")]
     public class PdfConverter : IPdfConverter
@@ -32,19 +32,33 @@ namespace PdfToImageConverter
             }
         }
 
+        private bool ValidateFilePath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return false;
+            try
+            {
+                Path.GetFullPath(path);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         [ComVisible(true)]
         public string ConvertPdfToImage(string pdfPath, string outputPath, int dpi = 300)
         {
             try
             {
-                if (string.IsNullOrEmpty(pdfPath))
+                if (!ValidateFilePath(pdfPath))
                 {
-                    return "Error: PDF path is empty or null";
+                    return "Error: Invalid PDF path format";
                 }
 
-                if (string.IsNullOrEmpty(outputPath))
+                if (!ValidateFilePath(outputPath))
                 {
-                    return "Error: Output path is empty or null";
+                    return "Error: Invalid output path format";
                 }
 
                 if (!File.Exists(pdfPath))
@@ -74,7 +88,6 @@ namespace PdfToImageConverter
                         // Create a new PDF document for this page
                         using (var singlePageDoc = new PdfDocument())
                         {
-                            // Add the page to the new document
                             singlePageDoc.AddPage(page);
 
                             // Save to memory stream
@@ -90,18 +103,19 @@ namespace PdfToImageConverter
 
                                     using (Graphics graphics = Graphics.FromImage(bitmap))
                                     {
-                                        // Set high quality rendering
                                         graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                                         graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
                                         graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-
-                                        // Clear background to white
                                         graphics.FillRectangle(Brushes.White, 0, 0, (int)width, (int)height);
 
-                                        // Load and draw the PDF page
-                                        using (var img = Image.FromStream(ms))
+                                        // Create a copy of the stream for image loading
+                                        byte[] buffer = ms.ToArray();
+                                        using (var imageMs = new MemoryStream(buffer, false))
                                         {
-                                            graphics.DrawImage(img, 0, 0, (int)width, (int)height);
+                                            using (var img = Image.FromStream(imageMs))
+                                            {
+                                                graphics.DrawImage(img, 0, 0, (int)width, (int)height);
+                                            }
                                         }
                                     }
 
@@ -112,8 +126,6 @@ namespace PdfToImageConverter
                                         string fileNameWithoutExt = Path.GetFileNameWithoutExtension(outputPath);
                                         string directory = Path.GetDirectoryName(outputPath);
                                         pageOutputPath = Path.Combine(directory, fileNameWithoutExt + "_page" + (pageNumber + 1).ToString() + extension);
-                                        
-                                        // Ensure directory exists for multi-page output
                                         EnsureDirectoryExists(pageOutputPath);
                                     }
 
@@ -129,8 +141,8 @@ namespace PdfToImageConverter
             }
             catch (Exception ex)
             {
-                return "Error: " + ex.GetType().Name + " - " + ex.Message;
+                return $"Error: {ex.GetType().Name} - {ex.Message} - Location: {ex.StackTrace}";
             }
         }
     }
-} 
+}
