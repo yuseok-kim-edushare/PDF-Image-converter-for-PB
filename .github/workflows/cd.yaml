@@ -45,11 +45,11 @@ jobs:
       run: |
         mkdir ${{ github.workspace }}\release-files -Force
         # Copy files from publish directories
-        if (Test-Path "${{ github.workspace }}\publish") {
-          Copy-Item -Path "${{ github.workspace }}\publish\*" -Destination "${{ github.workspace }}\release-files" -Recurse -Force
+        if (Test-Path "${{ github.workspace }}\bin\Release\net481\publish") {
+          Copy-Item -Path "${{ github.workspace }}\bin\Release\net481\publish\*" -Destination "${{ github.workspace }}\release-files" -Recurse -Force
         }
-        if (Test-Path "${{ github.workspace }}\publish\de") {
-          Copy-Item -Path "${{ github.workspace }}\publish\de\*" -Destination "${{ github.workspace }}\release-files\de" -Force
+        if (Test-Path "${{ github.workspace }}\bin\Release\net481\publish\de") {
+          Copy-Item -Path "${{ github.workspace }}\bin\Release\net481\publish\de\*" -Destination "${{ github.workspace }}\release-files\de" -Force
         }
         # Create ZIP with all files
         Compress-Archive -Path "${{ github.workspace }}\release-files\*" -DestinationPath "${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip" -Force
