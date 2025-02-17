@@ -44,18 +44,15 @@ jobs:
     - name: Prepare Release Files
       run: |
         mkdir ${{ github.workspace }}\release-files -Force
-        
         # Copy files from publish directories
         if (Test-Path "${{ github.workspace }}\publish") {
           Copy-Item -Path "${{ github.workspace }}\publish\*" -Destination "${{ github.workspace }}\release-files" -Recurse -Force
         }
-        
         if (Test-Path "${{ github.workspace }}\publish\de") {
           Copy-Item -Path "${{ github.workspace }}\publish\de\*" -Destination "${{ github.workspace }}\release-files\de" -Force
         }
-        
         # Create ZIP with all files
-        Compress-Archive -Path ${{ github.workspace }}\release-files\* -DestinationPath ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
+        Compress-Archive -Path "${{ github.workspace }}\release-files\*" -DestinationPath "${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip" -Force
         
     - name: Get latest release version and Generate release notes
       id: get_latest_release
@@ -107,8 +104,7 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
-        files: |
-          ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
+        files: release-files/PdfToImageConverter-Full.zip
         tag_name: ${{ env.new_release }}
         name: ${{ env.new_release }}
         body: ${{ env.release_notes }}
