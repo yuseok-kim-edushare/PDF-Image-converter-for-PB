@@ -5,6 +5,10 @@ using System.IO;
 using System.Runtime.InteropServices;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
+using System.Drawing.Drawing2D;
+using PdfSharp.Drawing;
+using PdfSharp.UniversalAccessibility.Drawing;
+using PdfSharp.Drawing.BarCodes;
 
 namespace PdfToImageConverter
 {
@@ -13,12 +17,13 @@ namespace PdfToImageConverter
     public interface IPdfConverter
     {
         [ComVisible(true)]
+        [DispId(1)]
         string ConvertPdfToImage(string pdfPath, string outputPath, int dpi);
     }
 
     [ComVisible(true)]
     [Guid("02FCF9B4-E978-4FE0-B5F3-F66F11B30AE7")]
-    [ClassInterface(ClassInterfaceType.AutoDual)]
+    [ClassInterface(ClassInterfaceType.None)]
     [ComDefaultInterface(typeof(IPdfConverter))]
     [ProgId("PdfToImageConverter.PdfConverter")]
     public class PdfConverter : IPdfConverter
@@ -85,54 +90,52 @@ namespace PdfToImageConverter
                         double width = page.Width.Point * (dpi / 72.0);
                         double height = page.Height.Point * (dpi / 72.0);
 
-                        // Create a new PDF document for this page
-                        using (var singlePageDoc = new PdfDocument())
+                        string pageOutputPath = outputPath;
+                        if (document.PageCount > 1)
                         {
-                            singlePageDoc.AddPage(page);
+                            string extension = Path.GetExtension(outputPath);
+                            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(outputPath);
+                            string directory = Path.GetDirectoryName(outputPath);
+                            pageOutputPath = Path.Combine(directory, fileNameWithoutExt + "_page" + (pageNumber + 1).ToString() + extension);
+                            EnsureDirectoryExists(pageOutputPath);
+                        }
 
-                            // Save to memory stream
-                            using (var ms = new MemoryStream())
+                        // Create bitmap and set its resolution
+                        using (var bitmap = new Bitmap((int)width, (int)height))
+                        {
+                            bitmap.SetResolution(dpi, dpi);
+
+                            using (Graphics graphics = Graphics.FromImage(bitmap))
                             {
-                                singlePageDoc.Save(ms, false);
-                                ms.Position = 0;
+                                graphics.Clear(Color.White);
+                                graphics.SmoothingMode = SmoothingMode.HighQuality;
+                                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                                graphics.CompositingQuality = CompositingQuality.HighQuality;
 
-                                // Create a bitmap with the right dimensions
-                                using (var bitmap = new Bitmap((int)width, (int)height))
+                                // Create a PDF page for rendering
+                                using (var tempDoc = new PdfDocument())
                                 {
-                                    bitmap.SetResolution(dpi, dpi);
+                                    // Import the page from the original document
+                                    tempDoc.AddPage(page);
 
-                                    using (Graphics graphics = Graphics.FromImage(bitmap))
+                                    // Save to memory stream and load as image
+                                    using (var ms = new MemoryStream())
                                     {
-                                        graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                                        graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-                                        graphics.FillRectangle(Brushes.White, 0, 0, (int)width, (int)height);
-
-                                        // Create a copy of the stream for image loading
-                                        byte[] buffer = ms.ToArray();
-                                        using (var imageMs = new MemoryStream(buffer, false))
+                                        tempDoc.Save(ms, false);
+                                        ms.Position = 0;
+                                        
+                                        // Draw to graphics
+                                        using (var img = Image.FromStream(ms))
                                         {
-                                            using (var img = Image.FromStream(imageMs))
-                                            {
-                                                graphics.DrawImage(img, 0, 0, (int)width, (int)height);
-                                            }
+                                            graphics.DrawImage(img, 0, 0, (float)width, (float)height);
                                         }
                                     }
-
-                                    string pageOutputPath = outputPath;
-                                    if (document.PageCount > 1)
-                                    {
-                                        string extension = Path.GetExtension(outputPath);
-                                        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(outputPath);
-                                        string directory = Path.GetDirectoryName(outputPath);
-                                        pageOutputPath = Path.Combine(directory, fileNameWithoutExt + "_page" + (pageNumber + 1).ToString() + extension);
-                                        EnsureDirectoryExists(pageOutputPath);
-                                    }
-
-                                    // Save the image as PNG
-                                    bitmap.Save(pageOutputPath, ImageFormat.Png);
                                 }
                             }
+
+                            // Save as PNG
+                            bitmap.Save(pageOutputPath, ImageFormat.Png);
                         }
                     }
                 }
