@@ -52,7 +52,7 @@ jobs:
           Copy-Item -Path "${{ github.workspace }}\bin\Release\net481\publish\de\*" -Destination "${{ github.workspace }}\release-files\de" -Force
         }
         # Create ZIP with all files
-        Compress-Archive -Path "${{ github.workspace }}\release-files\*" -DestinationPath "${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip" -Force
+        Compress-Archive -Path ${{ github.workspace }}\release-files\* -DestinationPath ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip -Force
         
     - name: Get latest release version and Generate release notes
       id: get_latest_release
