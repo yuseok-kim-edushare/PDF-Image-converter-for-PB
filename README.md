@@ -63,3 +63,7 @@ When converting multi-page PDFs, the library will automatically append page numb
 ## Error Handling
 
 The conversion method returns a string starting with either "SUCCESS" or "ERROR" followed by additional details. Make sure to handle both cases in your PowerBuilder code as shown in the usage example above. 
+
+## Acknowledgements
+
+- [PdfSharp](https://github.com/empira/PdfSharp) for the PDF conversion library
