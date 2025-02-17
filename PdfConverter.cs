@@ -17,7 +17,7 @@ namespace PdfToImageConverter
     }
 
     [ComVisible(true)]
-    [Guid("A8B9E0C1-D513-4D8A-B11F-4A10E3D0C1A8")]
+    [Guid("02FCF9B4-E978-4FE0-B5F3-F66F11B30AE7")]
     [ClassInterface(ClassInterfaceType.None)]
     [ProgId("PdfToImageConverter.PdfConverter")]
     public class PdfConverter : IPdfConverter
