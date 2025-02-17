@@ -3,7 +3,8 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
-using PdfiumViewer;
+using PdfSharp.Pdf;
+using PdfSharp.Pdf.IO;
 
 namespace PdfToImageConverter
 {
@@ -45,7 +46,7 @@ namespace PdfToImageConverter
                 EnsureDirectoryExists(outputPath);
 
                 // Load the PDF document
-                using (var document = PdfDocument.Load(pdfPath))
+                using (var document = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Import))
                 {
                     if (document.PageCount == 0)
                     {
@@ -54,28 +55,62 @@ namespace PdfToImageConverter
 
                     for (int pageNumber = 0; pageNumber < document.PageCount; pageNumber++)
                     {
-                        // Calculate the size based on DPI
-                        var pdfSize = document.PageSizes[pageNumber];
-                        int width = (int)(pdfSize.Width / 72.0f * dpi);
-                        int height = (int)(pdfSize.Height / 72.0f * dpi);
+                        var page = document.Pages[pageNumber];
+                        
+                        // Calculate dimensions based on DPI
+                        double width = page.Width.Point * (dpi / 72.0);
+                        double height = page.Height.Point * (dpi / 72.0);
 
-                        // Render the page to an image
-                        using (var image = document.Render(pageNumber, width, height, dpi, dpi, false))
+                        // Create a new PDF document for this page
+                        using (var singlePageDoc = new PdfDocument())
                         {
-                            string pageOutputPath = outputPath;
-                            if (document.PageCount > 1)
-                            {
-                                string extension = Path.GetExtension(outputPath);
-                                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(outputPath);
-                                string directory = Path.GetDirectoryName(outputPath);
-                                pageOutputPath = Path.Combine(directory, $"{fileNameWithoutExt}_page{pageNumber + 1}{extension}");
-                                
-                                // Ensure directory exists for multi-page output
-                                EnsureDirectoryExists(pageOutputPath);
-                            }
+                            // Add the page to the new document
+                            singlePageDoc.AddPage(page);
 
-                            // Save the image as PNG
-                            image.Save(pageOutputPath, ImageFormat.Png);
+                            // Save to memory stream
+                            using (var ms = new MemoryStream())
+                            {
+                                singlePageDoc.Save(ms, false);
+                                ms.Position = 0;
+
+                                // Create a bitmap with the right dimensions
+                                using (var bitmap = new Bitmap((int)width, (int)height))
+                                {
+                                    bitmap.SetResolution(dpi, dpi);
+
+                                    using (Graphics graphics = Graphics.FromImage(bitmap))
+                                    {
+                                        // Set high quality rendering
+                                        graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                                        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                        graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+
+                                        // Clear background to white
+                                        graphics.FillRectangle(Brushes.White, 0, 0, (int)width, (int)height);
+
+                                        // Load and draw the PDF page
+                                        using (var img = Image.FromStream(ms))
+                                        {
+                                            graphics.DrawImage(img, 0, 0, (int)width, (int)height);
+                                        }
+                                    }
+
+                                    string pageOutputPath = outputPath;
+                                    if (document.PageCount > 1)
+                                    {
+                                        string extension = Path.GetExtension(outputPath);
+                                        string fileNameWithoutExt = Path.GetFileNameWithoutExtension(outputPath);
+                                        string directory = Path.GetDirectoryName(outputPath);
+                                        pageOutputPath = Path.Combine(directory, $"{fileNameWithoutExt}_page{pageNumber + 1}{extension}");
+                                        
+                                        // Ensure directory exists for multi-page output
+                                        EnsureDirectoryExists(pageOutputPath);
+                                    }
+
+                                    // Save the image as PNG
+                                    bitmap.Save(pageOutputPath, ImageFormat.Png);
+                                }
+                            }
                         }
                     }
                 }
