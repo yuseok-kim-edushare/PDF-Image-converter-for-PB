@@ -6,9 +6,6 @@ using System.Runtime.InteropServices;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using System.Drawing.Drawing2D;
-using PdfSharp.Drawing;
-using PdfSharp.UniversalAccessibility.Drawing;
-using PdfSharp.Drawing.BarCodes;
 
 namespace PdfToImageConverter
 {
