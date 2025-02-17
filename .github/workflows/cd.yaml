@@ -44,13 +44,16 @@ jobs:
     - name: Prepare Release Files
       run: |
         mkdir ${{ github.workspace }}\release-files -Force
-        # Copy merged DLL
-        Copy-Item ${{ github.workspace }}\bin\Release\net481\publish\PdfToImageConverter.dll ${{ github.workspace }}\release-files\PdfToImageConverter.dll
-
-        # Copy native dependencies
-        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\PdfiumViewer.dll ${{ github.workspace }}\release-files\PdfiumViewer.dll
-        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\nl -Destination ${{ github.workspace }}\release-files\ -Recurse
-        Copy-Item -Path ${{ github.workspace }}\bin\Release\net481\publish\x64 -Destination ${{ github.workspace }}\release-files\ -Recurse
+        
+        # Copy files from publish directories
+        if (Test-Path "${{ github.workspace }}\publish") {
+          Copy-Item -Path "${{ github.workspace }}\publish\*" -Destination "${{ github.workspace }}\release-files" -Recurse -Force
+        }
+        
+        if (Test-Path "${{ github.workspace }}\publish\de") {
+          Copy-Item -Path "${{ github.workspace }}\publish\de\*" -Destination "${{ github.workspace }}\release-files\de" -Force
+        }
+        
         # Create ZIP with all files
         Compress-Archive -Path ${{ github.workspace }}\release-files\* -DestinationPath ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
         
