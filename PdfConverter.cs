@@ -9,10 +9,10 @@ namespace PdfToImageConverter
 {
     [ComVisible(true)]
     [Guid("A8B9E0C1-D513-4D8A-B11F-4A10E3D0C1A8")]
-    [ClassInterface(ClassInterfaceType.None)]
-    public static class PdfConverter
+    [ClassInterface(ClassInterfaceType.AutoDispatch)]
+    public class PdfConverter
     {
-        private static void EnsureDirectoryExists(string filePath)
+        private void EnsureDirectoryExists(string filePath)
         {
             string directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -22,7 +22,7 @@ namespace PdfToImageConverter
         }
 
         [ComVisible(true)]
-        public static string ConvertPdfToImage(string pdfPath, string outputPath, int dpi = 300)
+        public string ConvertPdfToImage(string pdfPath, string outputPath, int dpi = 300)
         {
             try
             {
@@ -56,8 +56,8 @@ namespace PdfToImageConverter
                     {
                         // Calculate the size based on DPI
                         var pdfSize = document.PageSizes[pageNumber];
-                        int width = (int)((pdfSize.Width / 72.0f) * dpi);
-                        int height = (int)((pdfSize.Height / 72.0f) * dpi);
+                        int width = (int)(pdfSize.Width / 72.0f * dpi);
+                        int height = (int)(pdfSize.Height / 72.0f * dpi);
 
                         // Render the page to an image
                         using (var image = document.Render(pageNumber, width, height, dpi, dpi, false))
