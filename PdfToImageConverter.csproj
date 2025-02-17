@@ -34,7 +34,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="PdfSharp">
-      <HintPath>packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.dll</HintPath>
+      <HintPath>packages\PdfSharp.6.1.1\lib\netstandard2.0\PdfSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
