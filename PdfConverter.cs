@@ -92,7 +92,7 @@ namespace PdfToImageConverter
                         return "Error: PDF document has no pages";
                     }
 
-                    for (int pageNumber = 0; pageNumber < document.PageCount; pageNumber++)
+                    Parallel.For(0, document.PageCount, pageNumber =>
                     {
                         var page = document.Pages[pageNumber];
 
@@ -140,7 +140,7 @@ namespace PdfToImageConverter
                             // Save as PNG
                             bitmap.Save(pageOutputPath, ImageFormat.Png);
                         }
-                    }
+                    });
                 }
 
                 return "SUCCESS: PDF converted successfully";
