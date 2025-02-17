@@ -39,7 +39,7 @@ jobs:
     
     - name: Build solution for release (without tests)
       run: |
-        dotnet publish PdfToImageConverter.csproj --configuration Release
+        msbuild PdfToImageConverter.csproj /p:Configuration=Release
 
     - name: Prepare Release Files
       run: |
