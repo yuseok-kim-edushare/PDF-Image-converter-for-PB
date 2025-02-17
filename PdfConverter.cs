@@ -10,10 +10,10 @@ namespace PdfToImageConverter
 {
     [ComVisible(true)]
     [Guid("A8B9E0C1-D513-4D8A-B11F-4A10E3D0C1A8")]
-    [ClassInterface(ClassInterfaceType.AutoDual)]
+    [ClassInterface(ClassInterfaceType.None)]
     public class PdfConverter
     {
-        private void EnsureDirectoryExists(string filePath)
+        private static void EnsureDirectoryExists(string filePath)
         {
             string directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -23,7 +23,7 @@ namespace PdfToImageConverter
         }
 
         [ComVisible(true)]
-        public string ConvertPdfToImage(string pdfPath, string outputPath, int dpi = 300)
+        public static string ConvertPdfToImage(string pdfPath, string outputPath, int dpi = 300)
         {
             try
             {
