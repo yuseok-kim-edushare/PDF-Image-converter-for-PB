@@ -4,9 +4,10 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.IO;
-using System.Drawing.Drawing2D;
+using System.Threading;
+using System.Windows.Threading;
+using System.Collections.Concurrent;
+using PDFtoImage;
 
 namespace PdfToImageConverter
 {
@@ -27,6 +28,7 @@ namespace PdfToImageConverter
     public class PdfConverter : IPdfConverter
     {
         private const string TEMP_DIR = @"C:\temp\Powerbuilder-pdf2img";
+        private static readonly object _initLock = new object();
 
         static PdfConverter()
         {
@@ -35,7 +37,6 @@ namespace PdfToImageConverter
                 // Log current directory and loaded assemblies
                 string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
                 File.AppendAllText(logPath, $"\n\nStarting static constructor at {DateTime.Now}\n");
-                File.AppendAllText(logPath, $"Current Directory: {Environment.CurrentDirectory}\n");
                 
                 // Ensure temp directory exists
                 if (!Directory.Exists(TEMP_DIR))
@@ -57,19 +58,6 @@ namespace PdfToImageConverter
                 {
                     File.AppendAllText(logPath, $"Warning: Failed to clean temp files: {ex.Message}\n");
                 }
-                
-                // Log loaded assemblies
-                var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-                File.AppendAllText(logPath, "Loaded assemblies:\n");
-                foreach (var assembly in loadedAssemblies)
-                {
-                    File.AppendAllText(logPath, $"- {assembly.FullName}\n");
-                }
-                
-                // Set encoding for PdfSharp
-                File.AppendAllText(logPath, "Attempting to register encoding provider...\n");
-                System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-                File.AppendAllText(logPath, "Successfully registered encoding provider\n");
             }
             catch (Exception ex)
             {
@@ -78,20 +66,7 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"\nError in static constructor: {ex.GetType().FullName}\n");
                 File.AppendAllText(logPath, $"Error Message: {ex.Message}\n");
                 File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");
-                throw; // Re-throw the exception
-            }
-        }
-
-        public PdfConverter()
-        {
-            try
-            {
-                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
-                File.AppendAllText(logPath, $"\nInstance constructor called at {DateTime.Now}\n");
-            }
-            catch
-            {
-                // Ignore logging errors in instance constructor
+                throw;
             }
         }
 
@@ -128,132 +103,6 @@ namespace PdfToImageConverter
                 return Path.Combine(directory, $"{fileNameWithoutExt}_page{pageNumber + 1}{extension}");
             }
             return outputPath;
-        }
-
-        private bool ProcessPage(PdfPage pdfPage, string outputFilePath, int dpi, out string error)
-        {
-            error = null;
-            string tempPdfPath = null;
-            
-            try
-            {
-                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
-                File.AppendAllText(logPath, $"\nProcessing page at {DateTime.Now}\n");
-                File.AppendAllText(logPath, $"Output path: {outputFilePath}\n");
-                File.AppendAllText(logPath, $"DPI: {dpi}\n");
-
-                // Ensure temp directory exists
-                if (!Directory.Exists(TEMP_DIR))
-                {
-                    Directory.CreateDirectory(TEMP_DIR);
-                    File.AppendAllText(logPath, $"Created temp directory: {TEMP_DIR}\n");
-                }
-
-                // Create temp file path in the fixed directory
-                tempPdfPath = Path.Combine(TEMP_DIR, $"temp_{Guid.NewGuid()}.pdf");
-                File.AppendAllText(logPath, $"Using temp file: {tempPdfPath}\n");
-
-                // Calculate dimensions based on DPI
-                double width = pdfPage.Width.Point * (dpi / 72.0);
-                double height = pdfPage.Height.Point * (dpi / 72.0);
-
-                File.AppendAllText(logPath, $"Page dimensions: Width={width}, Height={height}, Original Width={pdfPage.Width.Point}, Original Height={pdfPage.Height.Point}\n");
-
-                if (width <= 0 || height <= 0)
-                {
-                    error = $"Invalid page dimensions: Width={width}, Height={height}, Original Width={pdfPage.Width.Point}, Original Height={pdfPage.Height.Point}";
-                    return false;
-                }
-
-                // Create bitmap and set its resolution
-                File.AppendAllText(logPath, "Creating bitmap...\n");
-                using (var bitmap = new Bitmap(Math.Max(1, (int)width), Math.Max(1, (int)height)))
-                {
-                    bitmap.SetResolution(dpi, dpi);
-                    File.AppendAllText(logPath, "Created bitmap and set resolution\n");
-
-                    using (Graphics graphics = Graphics.FromImage(bitmap))
-                    {
-                        File.AppendAllText(logPath, "Created graphics context\n");
-                        graphics.Clear(Color.White);
-                        graphics.SmoothingMode = SmoothingMode.HighQuality;
-                        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                        graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                        graphics.CompositingQuality = CompositingQuality.HighQuality;
-
-                        // Create a temporary document with just this page
-                        File.AppendAllText(logPath, "Creating temporary document...\n");
-                        using (var tempDoc = new PdfDocument())
-                        {
-                            tempDoc.AddPage(pdfPage);
-                            
-                            File.AppendAllText(logPath, $"Saving to temp file: {tempPdfPath}\n");
-                            tempDoc.Save(tempPdfPath);
-
-                            // Use PrintDocument to render the PDF
-                            using (var printDoc = new System.Drawing.Printing.PrintDocument())
-                            {
-                                printDoc.PrinterSettings.PrinterName = "Microsoft Print to PDF";
-                                printDoc.DefaultPageSettings.PrinterResolution = new System.Drawing.Printing.PrinterResolution
-                                {
-                                    X = dpi,
-                                    Y = dpi,
-                                    Kind = System.Drawing.Printing.PrinterResolutionKind.Custom
-                                };
-
-                                printDoc.PrintPage += (sender, e) =>
-                                {
-                                    e.Graphics.DrawImage(bitmap, 0, 0, (float)width, (float)height);
-                                };
-
-                                // Print to memory
-                                printDoc.Print();
-                            }
-                        }
-                    }
-
-                    try
-                    {
-                        File.AppendAllText(logPath, $"Saving bitmap to: {outputFilePath}\n");
-                        bitmap.Save(outputFilePath, ImageFormat.Png);
-                        File.AppendAllText(logPath, "Successfully saved bitmap\n");
-                        return true;
-                    }
-                    catch (Exception ex)
-                    {
-                        error = $"Failed to save image: {ex.Message}";
-                        File.AppendAllText(logPath, $"Error saving bitmap: {ex.GetType().Name} - {ex.Message}\n");
-                        return false;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
-                File.AppendAllText(logPath, $"\nError in ProcessPage: {ex.GetType().Name} - {ex.Message}\n");
-                File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");
-                error = $"{ex.GetType().Name} - {ex.Message}";
-                return false;
-            }
-            finally
-            {
-                // Clean up temp file
-                try
-                {
-                    if (tempPdfPath != null && File.Exists(tempPdfPath))
-                    {
-                        File.Delete(tempPdfPath);
-                        string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
-                        File.AppendAllText(logPath, $"Cleaned up temp file: {tempPdfPath}\n");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Log cleanup errors but don't fail the conversion
-                    string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
-                    File.AppendAllText(logPath, $"Warning: Failed to clean up temporary file: {ex.Message}\n");
-                }
-            }
         }
 
         [ComVisible(true)]
@@ -300,81 +149,65 @@ namespace PdfToImageConverter
                     return $"Error: Failed to create output directory: {ex.Message}";
                 }
 
-                // Load the PDF document
-                PdfDocument document = null;
+                // Read the PDF file into a byte array
+                byte[] pdfBytes = File.ReadAllBytes(pdfPath);
+
+                // Get the page count
+                int pageCount = PDFtoImage.Conversion.GetPageCount(pdfBytes, null);
+                if (pageCount == 0)
+                {
+                    return "Error: PDF document has no pages";
+                }
+
+                // Create render options
+                var options = new RenderOptions(
+                    Dpi: dpi,
+                    Width: null,
+                    Height: null,
+                    WithAnnotations: true,
+                    WithFormFill: true,
+                    WithAspectRatio: true,
+                    Rotation: PdfRotation.Rotate0,
+                    AntiAliasing: PdfAntiAliasing.All,
+                    BackgroundColor: null,
+                    Bounds: null,
+                    UseTiling: true,
+                    DpiRelativeToBounds: false
+                );
+
+                // Process first page
                 try
                 {
-                    // First try to verify the PDF file
-                    if (new FileInfo(pdfPath).Length == 0)
-                    {
-                        return "Error: PDF file is empty";
-                    }
-
-                    File.AppendAllText(logPath, "Opening PDF document...\n");
-                    document = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Import);
-                    
-                    if (document == null)
-                    {
-                        return "Error: Failed to open PDF document (null document returned)";
-                    }
-                    File.AppendAllText(logPath, $"Successfully opened PDF with {document.PageCount} pages\n");
+                    string firstPageOutput = GetPageOutputPath(outputPath, 0, pageCount);
+                    PDFtoImage.Conversion.SavePng(firstPageOutput, pdfBytes, null, 0, options);
                 }
                 catch (Exception ex)
                 {
-                    File.AppendAllText(logPath, $"Failed to open PDF: {ex.GetType().Name} - {ex.Message}\n");
-                    return $"Error: Failed to open PDF: {ex.GetType().Name} - {ex.Message}";
+                    return $"Error processing first page: {ex.Message}";
                 }
 
-                using (document)
+                // If first page succeeds and there are more pages, process them
+                if (pageCount > 1)
                 {
-                    if (document.PageCount == 0)
+                    var exceptions = new ConcurrentQueue<Exception>();
+                    
+                    Parallel.For(1, pageCount, pageNumber =>
                     {
-                        return "Error: PDF document has no pages";
-                    }
-
-                    // Process first page
-                    var firstPage = document.Pages[0];
-                    if (firstPage == null)
-                    {
-                        return "Error: First page is null";
-                    }
-
-                    string firstPageOutput = GetPageOutputPath(outputPath, 0, document.PageCount);
-                    string error;
-                    if (!ProcessPage(firstPage, firstPageOutput, dpi, out error))
-                    {
-                        return $"Error processing first page: {error}";
-                    }
-
-                    // If first page succeeds and there are more pages, process them
-                    if (document.PageCount > 1)
-                    {
-                        var exceptions = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
-                        
-                        Parallel.For(1, document.PageCount, pageNumber =>
+                        try
                         {
-                            try
-                            {
-                                var page = document.Pages[pageNumber];
-                                string pageOutput = GetPageOutputPath(outputPath, pageNumber, document.PageCount);
-                                
-                                string pageError;
-                                if (!ProcessPage(page, pageOutput, dpi, out pageError))
-                                {
-                                    throw new Exception(pageError);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                exceptions.Enqueue(ex);
-                            }
-                        });
-
-                        if (exceptions.Count > 0)
-                        {
-                            var firstEx = exceptions.TryDequeue(out var ex) ? ex : null;
-                            return $"Error: {firstEx?.GetType().Name} - {firstEx?.Message}";
+                            string pageOutput = GetPageOutputPath(outputPath, pageNumber, pageCount);
+                            PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
                         }
+                        catch (Exception ex)
+                        {
+                            exceptions.Enqueue(ex);
+                        }
+                    });
+
+                    if (exceptions.Count > 0)
+                    {
+                        var firstEx = exceptions.TryDequeue(out var ex) ? ex : null;
+                        return $"Error: {firstEx?.GetType().Name} - {firstEx?.Message}";
                     }
                 }
 
