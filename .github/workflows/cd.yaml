@@ -71,97 +71,40 @@ jobs:
         
     - name: Get latest release version and Generate release notes
       id: get_latest_release
-      shell: pwsh
       run: |
-        # Set error action preference and encoding
-        $ErrorActionPreference = "Stop"
-        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-        
-        # Get latest tag or create initial version
         try {
-            $latest_release = git describe --tags --abbrev=0 2>$null
-            
-            if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($latest_release)) {
-                Write-Host "Latest release version: $latest_release"
-                
-                # Parse version and increment
-                $versionParts = $latest_release.TrimStart('v').Split('.')
-                $versionParts[-1] = [int]$versionParts[-1] + 1
-                $newVersionString = "v" + ($versionParts -join '.')
-                
-                # Get changes since last release
-                $changes = git log "$latest_release..HEAD" --pretty=format:"* %s (%h)" --no-merges
-                if ($LASTEXITCODE -ne 0) { $changes = @("* Initial changes") }
-                
-                # Get modified files
-                $fileChanges = git diff --name-status "$latest_release..HEAD" | ForEach-Object {
-                    if (-not [string]::IsNullOrWhiteSpace($_)) {
-                        $parts = $_.Split("`t")
-                        if ($parts.Length -ge 2) {
-                            $status = $parts[0].Trim()
-                            $file = $parts[1].Trim()
-                            switch($status) {
-                                "M" { "* Modified: $file" }
-                                "A" { "* Added: $file" }
-                                "D" { "* Deleted: $file" }
-                                default { "* Changed: $file" }
-                            }
-                        }
-                    }
-                }
-                if ($LASTEXITCODE -ne 0) { $fileChanges = @() }
-                
-            } else {
-                Write-Host "No previous release found. Creating initial release."
-                $newVersionString = "v0.0.1"
-                $changes = @("* Initial release")
-                $fileChanges = git ls-files | ForEach-Object { "* $_" }
-            }
-            
-            # Build release notes
-            $releaseNotes = @"
-            ## Release $newVersionString
-
-            ### Changes since $($latest_release ?? "initial version")
-            $($changes -join "`n")
-
-            ### Modified Files
-            $($fileChanges -join "`n")
-
-            ### Build Information
-            * Build Configuration: ${{ env.BUILD_CONFIG }}
-            * .NET Version: ${{ env.NET_VERSION }}
-            * Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
-        "@
-            
-            # Set environment variables for the release
-            Add-Content -Path $env:GITHUB_ENV -Value "new_release=$newVersionString"
-            Add-Content -Path $env:GITHUB_ENV -Value "release_notes<<EOF"
-            Add-Content -Path $env:GITHUB_ENV -Value $releaseNotes
-            Add-Content -Path $env:GITHUB_ENV -Value "EOF"
-            
-            # Save release notes to file for debugging
-            $releaseNotes | Out-File -FilePath "releaseNotes.txt" -Encoding utf8
-            
-            Write-Host "Successfully generated release notes for version $newVersionString"
-            
+          $latest_release = $(git describe --tags --abbrev=0)
+          Write-Output "Latest release version: $latest_release"
+          echo "latest_release=$latest_release" >> $env:GITHUB_ENV
+          $versionParts = $latest_release.Split('.')
+          $versionParts[-1] = [int]$versionParts[-1] + 1
+          $newVersionString = $versionParts -join '.'
+          
+          $releaseNotes = "## Changes in " + $latest_release + "`n"
+          $releaseNotes += (git log HEAD ^$latest_release --oneline) -join "`n"
+          $releaseNotes += "`n"
+          $releaseNotes += "### File edited `n"
+          $releaseNotes += "`n"
+          $releaseNotes += (git diff HEAD ^$latest_release --compact-summary) -join "`n"
         } catch {
-            Write-Host "::error::Failed to generate release notes: $_"
-            Write-Host $_.ScriptStackTrace
-            exit 1
-        }
-
-    - name: Explicit Version Order apply to create release
-      run: |
-        $latestCommitMessage = (git log -1 --pretty=%B)
-        foreach ($line in $latestCommitMessage) {
-          if ($line -match "Update Version to (\d+\.\d+\.\d+)") {
-            $messageParts = $line -split ' '
-            $lastPart = $messageParts[-1]
-            echo "new_release=$lastPart" >> $env:GITHUB_ENV
-          }
+          Write-Output "No previous release found. Creating initial release 0.0.1"
+          $newVersionString = "0.0.1"
+          
+          $releaseNotes = "## Initial Release v0.0.1`n"
+          $releaseNotes += (git log --oneline) -join "`n"
+          $releaseNotes += "`n"
+          $releaseNotes += "### Files included `n"
+          $releaseNotes += "`n"
+          $releaseNotes += (git ls-files | ForEach-Object { "Added $_" }) -join "`n"
         }
         
+        echo "new_release=$newVersionString" >> $env:GITHUB_ENV
+        $releaseNotes | Out-File -FilePath releaseNotes.txt -Encoding utf8
+        $releaseNotesContent = Get-Content -Path releaseNotes.txt -Raw
+        echo "release_notes<<EOF" >> $env:GITHUB_ENV
+        echo "$releaseNotesContent" >> $env:GITHUB_ENV
+        echo "EOF" >> $env:GITHUB_ENV
+
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
