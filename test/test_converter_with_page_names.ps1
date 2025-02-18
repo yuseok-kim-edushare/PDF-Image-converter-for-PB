@@ -123,18 +123,20 @@ try {
     Write-Host "Conversion result: $result"
 
     # Check for generated output file
-    Write-Host "`nChecking generated output file:"
+    Write-Host "`nChecking generated output files:"
     $outputDir = Split-Path $outputBasePath -Parent
-    $expectedOutput = Join-Path $outputDir "$($pageNames[$totalPagesNumber]).png"
+    $outputExt = [System.IO.Path]::GetExtension($outputBasePath)
     
-    if (Test-Path $expectedOutput) {
-        $fileInfo = Get-Item $expectedOutput
-        Write-Host "Output file created successfully:"
-        Write-Host "- Path: $expectedOutput"
-        Write-Host "- Size: $($fileInfo.Length) bytes"
-        Write-Host "- Created: $($fileInfo.CreationTime)"
+    # Get all generated output files
+    $outputFiles = Get-ChildItem -Path $outputDir -Filter "*$outputExt"
+    
+    if ($outputFiles.Count -gt 0) {
+        Write-Host "Found $($outputFiles.Count) output files:"
+        foreach ($file in $outputFiles) {
+            Write-Host "- $($file.Name): $($file.Length) bytes"
+        }
     } else {
-        Write-Host "Warning: Expected output file not found at: $expectedOutput" -ForegroundColor Yellow
+        Write-Host "Warning: No output files were created" -ForegroundColor Yellow
     }
 
 } catch {
@@ -144,7 +146,12 @@ try {
     Write-Host "Stack Trace: $($_.Exception.StackTrace)"
 } finally {
     if ($converter) {
-        [System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($converter) | Out-Null
+        # Properly release COM object
+        try {
+            [System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($converter) | Out-Null
+        } catch {
+            Write-Host "Note: COM object already released"
+        }
         $converter = $null
     }
     [System.GC]::Collect()
