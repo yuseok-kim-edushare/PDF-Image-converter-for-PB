@@ -33,7 +33,7 @@ jobs:
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug
 
-    - name: Run Integration Tests
+    - name: Run Integration Test 1 (test_converter.ps1)
       shell: pwsh
       run: |
         cd test
@@ -49,4 +49,22 @@ jobs:
             $hasErrors | ForEach-Object { Write-Error $_ }
             exit 1
         }
-        Write-Host "Tests completed successfully"
+        Write-Host "Test 1 completed successfully"
+    
+    - name: Run Integration Test 2 (test_converter_with_page_names.ps1)
+      shell: pwsh
+      run: |
+        cd test
+        $output = .\test_converter_with_page_names.ps1 *>&1
+        $output | ForEach-Object { Write-Host $_ }
+
+        $hasErrors = $output | Where-Object { 
+            $_ -like "*Error:*" -or 
+            $_ -like "*Error processing page:*" 
+        }
+        if ($hasErrors) {
+            Write-Error "Test failed with errors:"
+            $hasErrors | ForEach-Object { Write-Error $_ }
+            exit 1
+        }
+        Write-Host "Test 2 completed successfully"
