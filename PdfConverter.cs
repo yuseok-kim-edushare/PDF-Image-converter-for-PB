@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using PDFtoImage;
+using SkiaSharp;
 
 namespace PdfToImageConverter
 {
@@ -30,41 +31,77 @@ namespace PdfToImageConverter
     {
         private const string TEMP_DIR = @"C:\temp\Powerbuilder-pdf2img";
         private static readonly object _initLock = new object();
+        private static bool _initialized = false;
 
-        static PdfConverter()
+        public PdfConverter()
         {
             try
             {
-                // Log current directory and loaded assemblies
                 string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
-                File.AppendAllText(logPath, $"\n\nStarting static constructor at {DateTime.Now}\n");
+                File.AppendAllText(logPath, $"\n\nConstructing PdfConverter instance at {DateTime.Now}\n");
+
+                lock (_initLock)
+                {
+                    if (!_initialized)
+                    {
+                        InitializeConverter();
+                        _initialized = true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                File.AppendAllText(logPath, $"\nError in constructor: {ex.GetType().FullName}\n");
+                File.AppendAllText(logPath, $"Error Message: {ex.Message}\n");
+                File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");
                 
+                // Rethrow with more specific message for COM clients
+                throw new COMException($"Failed to initialize PdfConverter: {ex.Message}", ex);
+            }
+        }
+
+        private void InitializeConverter()
+        {
+            string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+            
+            try
+            {
+                // Log environment details
+                File.AppendAllText(logPath, $"OS Version: {Environment.OSVersion}\n");
+                File.AppendAllText(logPath, $"64-bit OS: {Environment.Is64BitOperatingSystem}\n");
+                File.AppendAllText(logPath, $"64-bit Process: {Environment.Is64BitProcess}\n");
+                File.AppendAllText(logPath, $"Current Directory: {Environment.CurrentDirectory}\n");
+                File.AppendAllText(logPath, $"Module Path: {System.Reflection.Assembly.GetExecutingAssembly().Location}\n");
+
                 // Ensure temp directory exists
                 if (!Directory.Exists(TEMP_DIR))
                 {
                     Directory.CreateDirectory(TEMP_DIR);
                     File.AppendAllText(logPath, $"Created temp directory: {TEMP_DIR}\n");
                 }
-                
-                // Clean any existing temp files
+
+                // Test SkiaSharp initialization
                 try
                 {
-                    foreach (var file in Directory.GetFiles(TEMP_DIR, "*.pdf"))
-                    {
-                        File.Delete(file);
-                    }
-                    File.AppendAllText(logPath, "Cleaned existing temp files\n");
+                    var dummyObject = new SKBitmap();
+                    File.AppendAllText(logPath, "SkiaSharp initialized successfully\n");
+                }
+                catch (DllNotFoundException dllEx)
+                {
+                    File.AppendAllText(logPath, $"SkiaSharp DLL not found: {dllEx.Message}\n");
+                    throw new COMException("Failed to load SkiaSharp native dependencies. Please ensure all required DLLs are present.", dllEx);
                 }
                 catch (Exception ex)
                 {
-                    File.AppendAllText(logPath, $"Warning: Failed to clean temp files: {ex.Message}\n");
+                    File.AppendAllText(logPath, $"SkiaSharp initialization failed: {ex.Message}\n");
+                    File.AppendAllText(logPath, $"SkiaSharp error details: {ex}\n");
+                    throw new COMException("Failed to initialize SkiaSharp. Please ensure all native dependencies are properly installed.", ex);
                 }
             }
             catch (Exception ex)
             {
-                // Log the error
-                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
-                File.AppendAllText(logPath, $"\nError in static constructor: {ex.GetType().FullName}\n");
+                File.AppendAllText(logPath, $"\nError in initialization: {ex.GetType().FullName}\n");
                 File.AppendAllText(logPath, $"Error Message: {ex.Message}\n");
                 File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");
                 throw;
