@@ -58,7 +58,24 @@ jobs:
             Copy-Item -Path "$buildPath\x86\*" -Destination $releaseDir -Recurse -Force
             Write-Host "Copied build artifacts from $buildPath to $releaseDir"
             
-            # List copied files for verification
+            # Delete unnecessary files
+            $filesToDelete = @(
+                "$releaseDir\x64\libpdfium.so",
+                "$releaseDir\x64\libskiasharp.so",
+                "$releaseDir\x86\libpdfium.so",
+                "$releaseDir\libpdfium.dylib",
+                "$releaseDir\libskiasharp.dylib",
+                "$releaseDir\PdfToImageConverter.pdb"
+            )
+
+            foreach ($file in $filesToDelete) {
+                if (Test-Path $file) {
+                    Remove-Item -Path $file -Force
+                    Write-Host "Deleted: $file"
+                }
+            }
+            
+            # List remaining files for verification
             Write-Host "`nFiles included in release:"
             Get-ChildItem -Path $releaseDir -Recurse | Where-Object { !$_.PSIsContainer } | ForEach-Object {
                 Write-Host $_.FullName.Replace($releaseDir, '')
