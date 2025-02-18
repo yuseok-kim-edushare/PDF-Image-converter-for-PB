@@ -26,6 +26,8 @@ namespace PdfToImageConverter
     [ProgId("PdfToImageConverter.PdfConverter")]
     public class PdfConverter : IPdfConverter
     {
+        private const string TEMP_DIR = @"C:\temp\Powerbuilder-pdf2img";
+
         static PdfConverter()
         {
             try
@@ -34,6 +36,27 @@ namespace PdfToImageConverter
                 string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
                 File.AppendAllText(logPath, $"\n\nStarting static constructor at {DateTime.Now}\n");
                 File.AppendAllText(logPath, $"Current Directory: {Environment.CurrentDirectory}\n");
+                
+                // Ensure temp directory exists
+                if (!Directory.Exists(TEMP_DIR))
+                {
+                    Directory.CreateDirectory(TEMP_DIR);
+                    File.AppendAllText(logPath, $"Created temp directory: {TEMP_DIR}\n");
+                }
+                
+                // Clean any existing temp files
+                try
+                {
+                    foreach (var file in Directory.GetFiles(TEMP_DIR, "*.pdf"))
+                    {
+                        File.Delete(file);
+                    }
+                    File.AppendAllText(logPath, "Cleaned existing temp files\n");
+                }
+                catch (Exception ex)
+                {
+                    File.AppendAllText(logPath, $"Warning: Failed to clean temp files: {ex.Message}\n");
+                }
                 
                 // Log loaded assemblies
                 var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
@@ -110,12 +133,25 @@ namespace PdfToImageConverter
         private bool ProcessPage(PdfPage pdfPage, string outputFilePath, int dpi, out string error)
         {
             error = null;
+            string tempPdfPath = null;
+            
             try
             {
                 string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
                 File.AppendAllText(logPath, $"\nProcessing page at {DateTime.Now}\n");
                 File.AppendAllText(logPath, $"Output path: {outputFilePath}\n");
                 File.AppendAllText(logPath, $"DPI: {dpi}\n");
+
+                // Ensure temp directory exists
+                if (!Directory.Exists(TEMP_DIR))
+                {
+                    Directory.CreateDirectory(TEMP_DIR);
+                    File.AppendAllText(logPath, $"Created temp directory: {TEMP_DIR}\n");
+                }
+
+                // Create temp file path in the fixed directory
+                tempPdfPath = Path.Combine(TEMP_DIR, $"temp_{Guid.NewGuid()}.pdf");
+                File.AppendAllText(logPath, $"Using temp file: {tempPdfPath}\n");
 
                 // Calculate dimensions based on DPI
                 double width = pdfPage.Width.Point * (dpi / 72.0);
@@ -145,32 +181,33 @@ namespace PdfToImageConverter
                         graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
                         graphics.CompositingQuality = CompositingQuality.HighQuality;
 
-                        // Create a PDF page for rendering
-                        File.AppendAllText(logPath, "Creating temporary PDF document\n");
+                        // Create a temporary document with just this page
+                        File.AppendAllText(logPath, "Creating temporary document...\n");
                         using (var tempDoc = new PdfDocument())
                         {
-                            File.AppendAllText(logPath, "Adding page to temporary document\n");
                             tempDoc.AddPage(pdfPage);
+                            
+                            File.AppendAllText(logPath, $"Saving to temp file: {tempPdfPath}\n");
+                            tempDoc.Save(tempPdfPath);
 
-                            using (var ms = new MemoryStream())
+                            // Use PrintDocument to render the PDF
+                            using (var printDoc = new System.Drawing.Printing.PrintDocument())
                             {
-                                File.AppendAllText(logPath, "Saving temporary document to memory stream\n");
-                                tempDoc.Save(ms, false);
-                                ms.Position = 0;
-
-                                if (ms.Length == 0)
+                                printDoc.PrinterSettings.PrinterName = "Microsoft Print to PDF";
+                                printDoc.DefaultPageSettings.PrinterResolution = new System.Drawing.Printing.PrinterResolution
                                 {
-                                    error = "Failed to save temporary PDF to memory stream";
-                                    return false;
-                                }
+                                    X = dpi,
+                                    Y = dpi,
+                                    Kind = System.Drawing.Printing.PrinterResolutionKind.Custom
+                                };
 
-                                File.AppendAllText(logPath, $"Memory stream size: {ms.Length} bytes\n");
-                                File.AppendAllText(logPath, "Creating image from stream\n");
-                                using (var img = Image.FromStream(ms))
+                                printDoc.PrintPage += (sender, e) =>
                                 {
-                                    File.AppendAllText(logPath, $"Drawing image: width={width}, height={height}\n");
-                                    graphics.DrawImage(img, 0, 0, (float)width, (float)height);
-                                }
+                                    e.Graphics.DrawImage(bitmap, 0, 0, (float)width, (float)height);
+                                };
+
+                                // Print to memory
+                                printDoc.Print();
                             }
                         }
                     }
@@ -197,6 +234,25 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");
                 error = $"{ex.GetType().Name} - {ex.Message}";
                 return false;
+            }
+            finally
+            {
+                // Clean up temp file
+                try
+                {
+                    if (tempPdfPath != null && File.Exists(tempPdfPath))
+                    {
+                        File.Delete(tempPdfPath);
+                        string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                        File.AppendAllText(logPath, $"Cleaned up temp file: {tempPdfPath}\n");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log cleanup errors but don't fail the conversion
+                    string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                    File.AppendAllText(logPath, $"Warning: Failed to clean up temporary file: {ex.Message}\n");
+                }
             }
         }
 
