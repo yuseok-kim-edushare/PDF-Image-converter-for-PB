@@ -34,6 +34,8 @@ This is a .NET library that converts PDF files to PNG images while maintaining t
    - Open your PowerBuilder project
    - Select Tools → ".NET DLL Importer"
    - Browse to and select "PdfToImageConverter.dll"
+     - Un-Zip release assets and select "PdfToImageConverter.dll"
+     - Asset name is "PdfToImageConverter-Full.zip"
    - Generate the proxy object
 
 2. Create an instance of the converter:
