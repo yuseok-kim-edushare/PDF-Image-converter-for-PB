@@ -263,10 +263,26 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
                 File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
 
-                // Validate page names parameters first
-                if (totalPagesNumber < 0 || totalPagesNumber >= pageNames.Length)
+                // Use common validation method first
+                byte[] pdfBytes;
+                string validationError = ValidateAndLoadPdf(pdfPath, outputPath, dpi, out pdfBytes);
+                if (validationError != null)
                 {
-                    return $"Error: Invalid page number. Must be between 0 and {pageNames.Length - 1}. Got: {totalPagesNumber}";
+                    return validationError;
+                }
+
+                int pdfPageCount = PDFtoImage.Conversion.GetPageCount(pdfBytes, null);
+
+                // Validate totalPagesNumber matches PDF page count
+                if (totalPagesNumber != pdfPageCount)
+                {
+                    return $"Error: Total pages number ({totalPagesNumber}) does not match PDF page count ({pdfPageCount})";
+                }
+
+                // Validate page names array length matches total pages
+                if (pageNames.Length < totalPagesNumber)
+                {
+                    return $"Error: Page names array length ({pageNames.Length}) is less than total pages ({totalPagesNumber})";
                 }
 
                 if (pageNames.Length == 0)
@@ -279,26 +295,20 @@ namespace PdfToImageConverter
                     return "Error: Page names array contains empty strings";
                 }
 
-                // Use common validation method
-                byte[] pdfBytes;
-                string validationError = ValidateAndLoadPdf(pdfPath, outputPath, dpi, out pdfBytes);
-                if (validationError != null)
-                {
-                    return validationError;
-                }
-
-                int pageCount = PDFtoImage.Conversion.GetPageCount(pdfBytes, null);
                 var options = CreateRenderOptions(dpi);
 
-                // Process the specified page using the page name
-                try
+                // Process all pages using their page names
+                for (int pageNumber = 0; pageNumber < totalPagesNumber; pageNumber++)
                 {
-                    string pageOutput = GetPageOutputPathForPageName(outputPath, pageNames[totalPagesNumber]);
-                    PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, totalPagesNumber, options);
-                }
-                catch (Exception ex)
-                {
-                    return $"Error processing page {totalPagesNumber} ({pageNames[totalPagesNumber]}): {ex.Message}";
+                    try
+                    {
+                        string pageOutput = GetPageOutputPathForPageName(outputPath, pageNames[pageNumber]);
+                        PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"Error processing page {pageNumber} ({pageNames[pageNumber]}): {ex.Message}";
+                    }
                 }
 
                 return "SUCCESS: PDF converted successfully";
