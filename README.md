@@ -21,6 +21,10 @@ This is a .NET library that converts PDF files to PNG images while maintaining t
 
 1. Open the solution in Visual Studio
 2. Build the solution in Release mode
+3. if you want to build with dotnet cli(cause of not having visual studio)
+   ```powershell
+   dotnet build PdfToImageConverter.csproj --configuration Release
+   ```
 
 ## Usage in PowerBuilder
 
