@@ -40,14 +40,15 @@ This is a .NET library that converts PDF files to PNG images while maintaining t
 
 2. Create an instance of the converter:
    ```powerbuilder
-   n_pdfconverter ln_converter // if you use other name for the proxy object need to change the name in the code
-   ln_converter = CREATE n_pdfconverter
+   nvo_pdfconverter lnvo_pdfconverter // if you use other name for the proxy object need to change the name in the code
+   lnvo_pdfconverter = Create nvo_pdfconverter 
    ```
+   but PB IDE automatic created proxy object name and function name shown as readme example
 
 3. Convert PDF to PNG:
    ```powerbuilder
    string ls_result
-   ls_result = ln_converter.ConvertPdfToImage("C:\input.pdf", "C:\output.png", 300)
+   ls_result = lnvo_pdfconverter.of_convertpdftoimage("C:\input.pdf", "C:\output.png", 300)
    
    if Left(ls_result, 7) = "SUCCESS" then
        MessageBox("Success", ls_result)
@@ -62,7 +63,7 @@ This is a .NET library that converts PDF files to PNG images while maintaining t
    string ls_page_names[]
    ls_page_names[1] = "Apple"
    ls_page_names[2] = "Banana"
-   ls_result = ln_converter.ConvertPdfToImageWithPageNames("C:\input.pdf", "C:\output.png", 300, 2, ls_page_names)
+   ls_result = lnvo_pdfconverter.of_ConvertPdfToImageWithPageNames("C:\input.pdf", "C:\output.png", 300, 2, ls_page_names)
    ```
 
 ## Parameters
