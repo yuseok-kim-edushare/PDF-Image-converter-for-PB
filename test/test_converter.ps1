@@ -5,31 +5,75 @@ Get-Process | Where-Object {$_.ProcessName -like "*PdfToImageConverter*" -or $_.
 Start-Sleep -Seconds 2
 
 # Clean up existing files
-Remove-Item -Path ".\*.dll" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path ".\*" -Include "*.dll","*.pdb","*.xml" -Force -ErrorAction SilentlyContinue
 Remove-Item -Path ".\de" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path ".\runtimes" -Recurse -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 1
 
-# copy debug artifacts to test folder
-try {
-    # Copy all DLL files from debug folder
-    Copy-Item -Path "..\bin\debug\*.dll" -Destination ".\" -Force
-    Start-Sleep -Seconds 1
+# Define source and destination paths
+$sourceDir = "..\bin\Debug\net481"
+$destDir = "."
+
+Write-Host "`nCopying build artifacts from: $sourceDir"
+Write-Host "To: $destDir"
+
+# Function to copy files with detailed logging
+function Copy-WithLogging {
+    param (
+        [string]$source,
+        [string]$destination,
+        [string]$filter = "*"
+    )
     
-    # Create new 'de' directory and copy contents if they exist
-    if (Test-Path "..\bin\debug\de") {
-        New-Item -ItemType Directory -Path ".\de" -Force | Out-Null
-        Copy-Item -Path "..\bin\debug\de\*" -Destination ".\de\" -Force
+    Write-Host "Copying from $source to $destination"
+    if (!(Test-Path $source)) {
+        Write-Host "Source path does not exist: $source" -ForegroundColor Red
+        return $false
     }
-} catch {
-    Write-Host "Warning: Some files could not be copied: $_"
-    Write-Host "Trying alternative copy method..."
-    Start-Sleep -Seconds 2
     
-    # Try robocopy as an alternative for all DLLs
-    robocopy "..\bin\debug" "." "*.dll" /R:3 /W:1
-    if (Test-Path "..\bin\debug\de") {
-        robocopy "..\bin\debug\de" ".\de" /E /R:3 /W:1
+    try {
+        # Create destination if it doesn't exist
+        if (!(Test-Path $destination)) {
+            New-Item -ItemType Directory -Path $destination -Force | Out-Null
+            Write-Host "Created directory: $destination"
+        }
+        
+        # Use robocopy for reliable copying
+        $robocopyArgs = @(
+            $source
+            $destination
+            $filter
+            "/E"      # Copy subdirectories, including empty ones
+            "/R:3"    # Number of retries
+            "/W:1"    # Wait time between retries
+            "/NFL"    # No file list - don't log file names
+            "/NDL"    # No directory list - don't log directory names
+            "/NJH"    # No job header
+            "/NJS"    # No job summary
+        )
+        
+        $result = Start-Process "robocopy" -ArgumentList $robocopyArgs -NoNewWindow -Wait -PassThru
+        
+        # Robocopy success codes are 0-7
+        if ($result.ExitCode -lt 8) {
+            Write-Host "Successfully copied files from $source" -ForegroundColor Green
+            return $true
+        } else {
+            Write-Host "Error copying files from $source. Exit code: $($result.ExitCode)" -ForegroundColor Red
+            return $false
+        }
+    } catch {
+        Write-Host "Error copying files: $_" -ForegroundColor Red
+        return $false
     }
+}
+
+# Copy all build artifacts
+$copySuccess = Copy-WithLogging -source $sourceDir -destination $destDir
+
+if (!$copySuccess) {
+    Write-Host "Failed to copy build artifacts. Aborting test." -ForegroundColor Red
+    exit 1
 }
 
 # Verify DLLs exist and show all DLLs in directory
@@ -69,19 +113,24 @@ $assemblyResolver = [System.ResolveEventHandler] {
 }
 [System.AppDomain]::CurrentDomain.add_AssemblyResolve($assemblyResolver)
 
-# List all DLLs in debug folder before copying
-Write-Host "`nListing DLLs in debug folder:"
-Get-ChildItem -Path "..\bin\debug\*.dll" | ForEach-Object {
-    Write-Host $_.Name
-}
-
 # Register the COM object
 try {
     Write-Host "`nRegistering COM object..."
-    $regasmOutput = & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\RegAsm.exe" "PdfToImageConverter.dll" /codebase
+    $regasmPath = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\RegAsm.exe"
+    if (!(Test-Path $regasmPath)) {
+        Write-Host "RegAsm.exe not found at expected path. Trying 32-bit path..." -ForegroundColor Yellow
+        $regasmPath = "C:\Windows\Microsoft.NET\Framework\v4.0.30319\RegAsm.exe"
+    }
+    
+    if (!(Test-Path $regasmPath)) {
+        Write-Host "RegAsm.exe not found. Cannot register COM object." -ForegroundColor Red
+        exit 1
+    }
+    
+    $regasmOutput = & $regasmPath "PdfToImageConverter.dll" /codebase
     Write-Host $regasmOutput
 } catch {
-    Write-Host "Error registering COM object: $_"
+    Write-Host "Error registering COM object: $_" -ForegroundColor Red
     exit 1
 }
 
@@ -117,7 +166,7 @@ try {
     # First verify the type is registered
     $type = [Type]::GetTypeFromProgID("PdfToImageConverter.PdfConverter")
     if ($type -eq $null) {
-        Write-Host "Error: COM type not found in registry. Registration may have failed."
+        Write-Host "Error: COM type not found in registry. Registration may have failed." -ForegroundColor Red
         exit 1
     }
     Write-Host "COM type found in registry: $($type.FullName)"
@@ -141,11 +190,11 @@ try {
         $outputInfo = Get-Item $outputPath
         Write-Host "Output file created: $($outputInfo.Length) bytes"
     } else {
-        Write-Host "Warning: Output file was not created"
+        Write-Host "Warning: Output file was not created" -ForegroundColor Yellow
     }
 
 } catch {
-    Write-Host "`nError Details:"
+    Write-Host "`nError Details:" -ForegroundColor Red
     Write-Host "Error Message: $($_.Exception.Message)"
     Write-Host "Error Type: $($_.Exception.GetType().FullName)"
     Write-Host "Stack Trace: $($_.Exception.StackTrace)"
@@ -156,7 +205,7 @@ try {
     if (Test-Path $regPath) {
         Get-ItemProperty $regPath | Format-List
     } else {
-        Write-Host "COM registration not found in registry"
+        Write-Host "COM registration not found in registry" -ForegroundColor Yellow
     }
 } finally {
     if ($converter) {
@@ -174,9 +223,9 @@ try {
     # Unregister the COM object
     try {
         Write-Host "`nUnregistering COM object..."
-        $unregisterOutput = & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\RegAsm.exe" "PdfToImageConverter.dll" /unregister
+        $unregisterOutput = & $regasmPath "PdfToImageConverter.dll" /unregister
         Write-Host $unregisterOutput
     } catch {
-        Write-Host "Error unregistering COM object: $_"
+        Write-Host "Error unregistering COM object: $_" -ForegroundColor Red
     }
 } 
