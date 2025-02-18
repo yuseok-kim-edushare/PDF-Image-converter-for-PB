@@ -71,3 +71,8 @@ $RECYCLE.BIN/
 
 # nuget exe for without vs enviroment
 nuget.exe
+test/PdfSharp.dll
+test/PdfSharp.xml
+test/PdfToImageConverter.dll
+test/PdfToImageConverter.pdb
+test/de/PdfSharp.resources.dll
