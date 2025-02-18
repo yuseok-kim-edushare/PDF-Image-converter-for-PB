@@ -11,36 +11,68 @@ Start-Sleep -Seconds 1
 
 # copy debug artifacts to test folder
 try {
-    # First try to copy PdfSharp.dll
-    Copy-Item -Path "..\bin\debug\PdfSharp.dll" -Destination ".\" -Force
+    # Copy all DLL files from debug folder
+    Copy-Item -Path "..\bin\debug\*.dll" -Destination ".\" -Force
     Start-Sleep -Seconds 1
     
-    # Then copy the converter DLL
-    Copy-Item -Path "..\bin\debug\PdfToImageConverter.dll" -Destination ".\" -Force
-    
-    # Create new 'de' directory and copy contents
-    New-Item -ItemType Directory -Path ".\de" -Force | Out-Null
-    Copy-Item -Path "..\bin\debug\de\*" -Destination ".\de\" -Force
+    # Create new 'de' directory and copy contents if they exist
+    if (Test-Path "..\bin\debug\de") {
+        New-Item -ItemType Directory -Path ".\de" -Force | Out-Null
+        Copy-Item -Path "..\bin\debug\de\*" -Destination ".\de\" -Force
+    }
 } catch {
     Write-Host "Warning: Some files could not be copied: $_"
     Write-Host "Trying alternative copy method..."
     Start-Sleep -Seconds 2
     
-    # Try robocopy as an alternative
+    # Try robocopy as an alternative for all DLLs
     robocopy "..\bin\debug" "." "*.dll" /R:3 /W:1
+    if (Test-Path "..\bin\debug\de") {
+        robocopy "..\bin\debug\de" ".\de" /E /R:3 /W:1
+    }
 }
 
-# Verify DLLs exist
+# Verify DLLs exist and show all DLLs in directory
 Write-Host "`nVerifying DLLs:"
-$dlls = @("PdfSharp.dll", "PdfToImageConverter.dll")
-foreach ($dll in $dlls) {
-    $exists = Test-Path $dll
-    Write-Host "$dll exists: $exists"
-    if ($exists) {
-        $fileInfo = Get-Item $dll
-        Write-Host "Size: $($fileInfo.Length) bytes"
-        Write-Host "Last Modified: $($fileInfo.LastWriteTime)"
+Get-ChildItem -Filter "*.dll" | ForEach-Object {
+    Write-Host "$($_.Name) exists: True"
+    Write-Host "Size: $($_.Length) bytes"
+    Write-Host "Last Modified: $($_.LastWriteTime)"
+    
+    # Get assembly details
+    try {
+        $assembly = [System.Reflection.Assembly]::LoadFile($_.FullName)
+        Write-Host "Assembly Full Name: $($assembly.FullName)"
+        Write-Host "Runtime Version: $($assembly.ImageRuntimeVersion)"
+    } catch {
+        Write-Host "Failed to load assembly: $_"
     }
+    Write-Host ""
+}
+
+# Add assembly resolution handler
+$assemblyResolver = [System.ResolveEventHandler] {
+    param($sender, $args)
+    Write-Host "Attempting to resolve assembly: $($args.Name)"
+    
+    # Check if the DLL exists in the current directory
+    $assemblyName = [System.Reflection.AssemblyName]::GetAssemblyName($args.Name)
+    $dllPath = Join-Path $PSScriptRoot "$($assemblyName.Name).dll"
+    
+    if (Test-Path $dllPath) {
+        Write-Host "Found assembly at: $dllPath"
+        return [System.Reflection.Assembly]::LoadFrom($dllPath)
+    }
+    
+    Write-Host "Assembly not found in current directory"
+    return $null
+}
+[System.AppDomain]::CurrentDomain.add_AssemblyResolve($assemblyResolver)
+
+# List all DLLs in debug folder before copying
+Write-Host "`nListing DLLs in debug folder:"
+Get-ChildItem -Path "..\bin\debug\*.dll" | ForEach-Object {
+    Write-Host $_.Name
 }
 
 # Register the COM object
@@ -80,11 +112,27 @@ Write-Host "Directory is writable: $((Get-Acl $outputDir).AccessToString)"
 # Create COM object
 $converter = $null
 try {
+    Write-Host "`nAttempting to create COM object..."
+    
+    # First verify the type is registered
+    $type = [Type]::GetTypeFromProgID("PdfToImageConverter.PdfConverter")
+    if ($type -eq $null) {
+        Write-Host "Error: COM type not found in registry. Registration may have failed."
+        exit 1
+    }
+    Write-Host "COM type found in registry: $($type.FullName)"
+    
+    # Try to create the object
+    Write-Host "Creating COM object instance..."
     $converter = New-Object -ComObject PdfToImageConverter.PdfConverter
-    Write-Host "`nSuccessfully created COM object"
+    Write-Host "Successfully created COM object"
 
     # Convert PDF to image
-    Write-Host "Starting conversion..."
+    Write-Host "`nStarting conversion..."
+    Write-Host "PDF Path: $pdfPath (Exists: $(Test-Path $pdfPath))"
+    Write-Host "Output Path: $outputPath"
+    Write-Host "DPI: $dpi"
+    
     $result = $converter.ConvertPdfToImage($pdfPath, $outputPath, $dpi)
     Write-Host "Conversion result: $result"
 
@@ -97,8 +145,19 @@ try {
     }
 
 } catch {
-    Write-Host "Error: $_"
+    Write-Host "`nError Details:"
+    Write-Host "Error Message: $($_.Exception.Message)"
+    Write-Host "Error Type: $($_.Exception.GetType().FullName)"
     Write-Host "Stack Trace: $($_.Exception.StackTrace)"
+    
+    # Get more details about COM registration
+    Write-Host "`nChecking COM registration details:"
+    $regPath = "HKLM:\SOFTWARE\Classes\PdfToImageConverter.PdfConverter"
+    if (Test-Path $regPath) {
+        Get-ItemProperty $regPath | Format-List
+    } else {
+        Write-Host "COM registration not found in registry"
+    }
 } finally {
     if ($converter) {
         # Properly release COM object
