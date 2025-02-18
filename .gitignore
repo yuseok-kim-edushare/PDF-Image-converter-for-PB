@@ -80,3 +80,5 @@ test/PdfSharp.System.dll
 test/System.Runtime.CompilerServices.Unsafe.dll
 test/System.Text.Encoding.CodePages.dll
 test/Microsoft.Extensions.Logging.Abstractions.dll
+/test/de
+test/PdfSharp-WPF.dll

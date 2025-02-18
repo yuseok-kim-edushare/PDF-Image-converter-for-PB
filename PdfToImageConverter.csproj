@@ -33,10 +33,10 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
-    <Reference Include="PdfSharp">
-      <HintPath>packages\PdfSharp.6.1.1\lib\netstandard2.0\PdfSharp.dll</HintPath>
+    <Reference Include="PdfSharp-WPF">
+      <HintPath>packages\PdfSharp-WPF.6.1.1\lib\net472\PdfSharp-WPF.dll</HintPath>
     </Reference>
-        <Reference Include="System.Text.Encoding.CodePages">
+    <Reference Include="System.Text.Encoding.CodePages">
       <HintPath>packages\System.Text.Encoding.CodePages.7.0.0\lib\net462\System.Text.Encoding.CodePages.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
@@ -46,6 +46,9 @@
       <HintPath>packages\Microsoft.Extensions.Logging.Abstractions.6.0.0\lib\net461\Microsoft.Extensions.Logging.Abstractions.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PdfConverter.cs" />
