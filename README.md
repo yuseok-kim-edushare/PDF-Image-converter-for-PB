@@ -66,4 +66,4 @@ The conversion method returns a string starting with either "SUCCESS" or "ERROR"
 
 ## Acknowledgements
 
-- [PdfSharp](https://github.com/empira/PdfSharp) for the PDF conversion library
+- [PDFtoImage](https://github.com/sungaila/PDFtoImage) for the PDF conversion library
