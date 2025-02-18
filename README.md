@@ -71,11 +71,22 @@ This is a .NET library that converts PDF files to PNG images while maintaining t
 - `outputPath`: Full path for the output PNG file
 - `dpi`: Optional. DPI value for the output image (default: 300)
 
+for `ConvertPdfToImageWithPageNames` method required some additional parameters:
+- `totalPagesNumber`: Total number of pages in the PDF
+- `pageNames`: Array of page names for the output images
+
 ## Multi-page PDFs
 
 When converting multi-page PDFs, the library will automatically append page numbers to the output filename:
 - Single page: `output.png`
 - Multi-page: `output_page1.png`, `output_page2.png`, etc.
+
+If you want to use your own page names, you can use `ConvertPdfToImageWithPageNames` method.
+- Ensure the `totalPagesNumber` is correct
+- Ensure the `pageNames` array is the same size as the number of pages in the PDF
+- then you got specific page names for each page like
+  - `Apple.png`
+  - `Banana.png`
 
 ## Error Handling
 
