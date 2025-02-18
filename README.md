@@ -54,6 +54,15 @@ This is a .NET library that converts PDF files to PNG images while maintaining t
    end if
    ```
 
+4. Convert PDF to PNG with page names:
+   ```powerbuilder
+   string ls_result
+   string ls_page_names[]
+   ls_page_names[1] = "Apple"
+   ls_page_names[2] = "Banana"
+   ls_result = ln_converter.ConvertPdfToImageWithPageNames("C:\input.pdf", "C:\output.png", 300, 2, ls_page_names)
+   ```
+
 ## Parameters
 
 - `pdfPath`: Full path to the input PDF file
