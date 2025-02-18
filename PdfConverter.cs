@@ -69,79 +69,123 @@ namespace PdfToImageConverter
             {
                 if (!ValidateFilePath(pdfPath))
                 {
-                    return "Error: Invalid PDF path format";
+                    return $"Error: Invalid PDF path format: {pdfPath}";
                 }
 
                 if (!ValidateFilePath(outputPath))
                 {
-                    return "Error: Invalid output path format";
+                    return $"Error: Invalid output path format: {outputPath}";
                 }
 
                 if (!File.Exists(pdfPath))
                 {
-                    return "Error: PDF file not found at path: " + pdfPath;
+                    return $"Error: PDF file not found at path: {pdfPath}";
+                }
+
+                if (dpi <= 0 || dpi > 1200)
+                {
+                    return $"Error: Invalid DPI value. Must be between 1 and 1200. Got: {dpi}";
                 }
 
                 // Ensure output directory exists before proceeding
-                EnsureDirectoryExists(outputPath);
+                try
+                {
+                    EnsureDirectoryExists(outputPath);
+                }
+                catch (Exception ex)
+                {
+                    return $"Error: Failed to create output directory: {ex.Message}";
+                }
 
                 // Load the PDF document
-                using (var document = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Import))
+                PdfDocument document = null;
+                try
+                {
+                    document = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Import);
+                }
+                catch (Exception ex)
+                {
+                    return $"Error: Failed to open PDF: {ex.GetType().Name} - {ex.Message}";
+                }
+
+                using (document)
                 {
                     if (document.PageCount == 0)
                     {
                         return "Error: PDF document has no pages";
                     }
 
+                    var exceptions = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
+
                     Parallel.For(0, document.PageCount, pageNumber =>
                     {
-                        var page = document.Pages[pageNumber];
-
-                        // Calculate dimensions based on DPI
-                        double width = page.Width.Point * (dpi / 72.0);
-                        double height = page.Height.Point * (dpi / 72.0);
-
-                        string pageOutputPath = GetPageOutputPath(outputPath, pageNumber, document.PageCount);
-                        EnsureDirectoryExists(pageOutputPath);
-
-                        // Create bitmap and set its resolution
-                        using (var bitmap = new Bitmap((int)width, (int)height))
+                        try
                         {
-                            bitmap.SetResolution(dpi, dpi);
+                            var page = document.Pages[pageNumber];
 
-                            using (Graphics graphics = Graphics.FromImage(bitmap))
+                            // Calculate dimensions based on DPI
+                            double width = page.Width.Point * (dpi / 72.0);
+                            double height = page.Height.Point * (dpi / 72.0);
+
+                            if (width <= 0 || height <= 0)
                             {
-                                graphics.Clear(Color.White);
-                                graphics.SmoothingMode = SmoothingMode.HighQuality;
-                                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                                graphics.CompositingQuality = CompositingQuality.HighQuality;
+                                throw new ArgumentException($"Invalid page dimensions: Width={width}, Height={height}");
+                            }
 
-                                // Create a PDF page for rendering
-                                using (var tempDoc = new PdfDocument())
+                            string pageOutputPath = GetPageOutputPath(outputPath, pageNumber, document.PageCount);
+
+                            // Create bitmap and set its resolution
+                            using (var bitmap = new Bitmap((int)width, (int)height))
+                            {
+                                bitmap.SetResolution(dpi, dpi);
+
+                                using (Graphics graphics = Graphics.FromImage(bitmap))
                                 {
-                                    // Import the page from the original document
-                                    tempDoc.AddPage(page);
+                                    graphics.Clear(Color.White);
+                                    graphics.SmoothingMode = SmoothingMode.HighQuality;
+                                    graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                                    graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                                    graphics.CompositingQuality = CompositingQuality.HighQuality;
 
-                                    // Save to memory stream and load as image
-                                    using (var ms = new MemoryStream())
+                                    // Create a PDF page for rendering
+                                    using (var tempDoc = new PdfDocument())
                                     {
-                                        tempDoc.Save(ms, false);
-                                        ms.Position = 0;
+                                        tempDoc.AddPage(page);
 
-                                        // Draw to graphics
-                                        using (var img = Image.FromStream(ms))
+                                        using (var ms = new MemoryStream())
                                         {
-                                            graphics.DrawImage(img, 0, 0, (float)width, (float)height);
+                                            tempDoc.Save(ms, false);
+                                            ms.Position = 0;
+
+                                            using (var img = Image.FromStream(ms))
+                                            {
+                                                graphics.DrawImage(img, 0, 0, (float)width, (float)height);
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            // Save as PNG
-                            bitmap.Save(pageOutputPath, ImageFormat.Png);
+                                try
+                                {
+                                    bitmap.Save(pageOutputPath, ImageFormat.Png);
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new Exception($"Failed to save image to {pageOutputPath}: {ex.Message}", ex);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            exceptions.Enqueue(ex);
                         }
                     });
+
+                    if (exceptions.Count > 0)
+                    {
+                        var firstEx = exceptions.TryDequeue(out var ex) ? ex : null;
+                        return $"Error: {firstEx?.GetType().Name} - {firstEx?.Message}";
+                    }
                 }
 
                 return "SUCCESS: PDF converted successfully";
