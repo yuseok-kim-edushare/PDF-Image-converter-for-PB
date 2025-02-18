@@ -132,7 +132,7 @@ jobs:
             * Build Configuration: ${{ env.BUILD_CONFIG }}
             * .NET Version: ${{ env.NET_VERSION }}
             * Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
-            "@
+        "@
             
             # Set environment variables for the release
             Add-Content -Path $env:GITHUB_ENV -Value "new_release=$newVersionString"
