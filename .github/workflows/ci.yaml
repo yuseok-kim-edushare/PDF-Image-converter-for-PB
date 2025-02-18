@@ -40,7 +40,10 @@ jobs:
         $output = .\test_converter.ps1 *>&1
         $output | ForEach-Object { Write-Host $_ }
         
-        $hasErrors = $output | Where-Object { $_ -like "*Error:*" }
+        $hasErrors = $output | Where-Object { 
+            $_ -like "*Error:*" -or 
+            $_ -like "*Error processing first page:*" 
+        }
         if ($hasErrors) {
             Write-Error "Test failed with errors:"
             $hasErrors | ForEach-Object { Write-Error $_ }
