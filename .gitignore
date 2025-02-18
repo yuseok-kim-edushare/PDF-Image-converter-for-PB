@@ -76,3 +76,6 @@ test/PdfSharp.xml
 test/PdfToImageConverter.dll
 test/PdfToImageConverter.pdb
 test/de/PdfSharp.resources.dll
+test/PdfSharp.System.dll
+test/System.Runtime.CompilerServices.Unsafe.dll
+test/System.Text.Encoding.CodePages.dll
