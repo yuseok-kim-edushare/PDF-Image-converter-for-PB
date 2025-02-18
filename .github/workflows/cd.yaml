@@ -151,6 +151,17 @@ jobs:
             exit 1
         }
 
+    - name: Explicit Version Order apply to create release
+      run: |
+        $latestCommitMessage = (git log -1 --pretty=%B)
+        foreach ($line in $latestCommitMessage) {
+          if ($line -match "Update Version to (\d+\.\d+\.\d+)") {
+            $messageParts = $line -split ' '
+            $lastPart = $messageParts[-1]
+            echo "new_release=$lastPart" >> $env:GITHUB_ENV
+          }
+        }
+        
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
