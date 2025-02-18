@@ -73,53 +73,13 @@ jobs:
       id: get_latest_release
       shell: pwsh
       run: |
-        # Set error action preference
+        # Set error action preference and encoding
         $ErrorActionPreference = "Stop"
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
         
-        function Get-FormattedChanges {
-            param (
-                [string]$FromRef,
-                [string]$ToRef = "HEAD"
-            )
-            
-            $changes = git log "$ToRef" "^$FromRef" --pretty=format:"* %s (%h)" --no-merges
-            if ($LASTEXITCODE -ne 0) { return $null }
-            return $changes
-        }
-        
-        function Get-FormattedFileChanges {
-            param (
-                [string]$FromRef,
-                [string]$ToRef = "HEAD"
-            )
-            
-            $fileChanges = git diff --name-status "$ToRef" "^$FromRef"
-            if ($LASTEXITCODE -ne 0) { return $null }
-            
-            $formatted = @()
-            foreach ($change in $fileChanges) {
-                if ([string]::IsNullOrWhiteSpace($change)) { continue }
-                
-                $parts = $change.Split("`t")
-                if ($parts.Length -lt 2) { continue }
-                
-                $status = $parts[0].Trim()
-                $file = $parts[1].Trim()
-                
-                $line = switch($status) {
-                    "M" { "* Modified: $file" }
-                    "A" { "* Added: $file" }
-                    "D" { "* Deleted: $file" }
-                    default { "* Changed: $file" }
-                }
-                $formatted += $line
-            }
-            return $formatted
-        }
-
+        # Get latest tag or create initial version
         try {
-            # Try to get the latest tag
-            $latest_release = $(git describe --tags --abbrev=0 2>$null)
+            $latest_release = git describe --tags --abbrev=0 2>$null
             
             if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($latest_release)) {
                 Write-Host "Latest release version: $latest_release"
@@ -129,50 +89,58 @@ jobs:
                 $versionParts[-1] = [int]$versionParts[-1] + 1
                 $newVersionString = "v" + ($versionParts -join '.')
                 
-                # Get changes
-                $changes = Get-FormattedChanges -FromRef $latest_release
-                $fileChanges = Get-FormattedFileChanges -FromRef $latest_release
+                # Get changes since last release
+                $changes = git log "$latest_release..HEAD" --pretty=format:"* %s (%h)" --no-merges
+                if ($LASTEXITCODE -ne 0) { $changes = @("* Initial changes") }
                 
-                $releaseNotes = @"
-## Release $newVersionString
-
-### Changes since $latest_release
-$($changes -join "`n")
-
-### Modified Files
-$($fileChanges -join "`n")
-
-### Build Information
-* Build Configuration: ${{ env.BUILD_CONFIG }}
-* .NET Version: ${{ env.NET_VERSION }}
-* Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
-"@
+                # Get modified files
+                $fileChanges = git diff --name-status "$latest_release..HEAD" | ForEach-Object {
+                    if (-not [string]::IsNullOrWhiteSpace($_)) {
+                        $parts = $_.Split("`t")
+                        if ($parts.Length -ge 2) {
+                            $status = $parts[0].Trim()
+                            $file = $parts[1].Trim()
+                            switch($status) {
+                                "M" { "* Modified: $file" }
+                                "A" { "* Added: $file" }
+                                "D" { "* Deleted: $file" }
+                                default { "* Changed: $file" }
+                            }
+                        }
+                    }
+                }
+                if ($LASTEXITCODE -ne 0) { $fileChanges = @() }
+                
             } else {
                 Write-Host "No previous release found. Creating initial release."
                 $newVersionString = "v0.0.1"
-                
-                $initialFiles = git ls-files | ForEach-Object { "* $_" }
-                
-                $releaseNotes = @"
-## Initial Release $newVersionString
-
-### Initial Files
-$($initialFiles -join "`n")
-
-### Build Information
-* Build Configuration: ${{ env.BUILD_CONFIG }}
-* .NET Version: ${{ env.NET_VERSION }}
-* Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
-"@
+                $changes = @("* Initial release")
+                $fileChanges = git ls-files | ForEach-Object { "* $_" }
             }
             
-            # Set environment variables for the release
-            "new_release=$newVersionString" | Out-File -FilePath $env:GITHUB_ENV -Append
-            "release_notes<<EOF" | Out-File -FilePath $env:GITHUB_ENV -Append
-            $releaseNotes | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-            "EOF" | Out-File -FilePath $env:GITHUB_ENV -Append
+            # Build release notes
+            $releaseNotes = @"
+            ## Release $newVersionString
+
+            ### Changes since $($latest_release ?? "initial version")
+            $($changes -join "`n")
+
+            ### Modified Files
+            $($fileChanges -join "`n")
+
+            ### Build Information
+            * Build Configuration: ${{ env.BUILD_CONFIG }}
+            * .NET Version: ${{ env.NET_VERSION }}
+            * Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss UTC")
+            "@
             
-            # Also save to file for debugging
+            # Set environment variables for the release
+            Add-Content -Path $env:GITHUB_ENV -Value "new_release=$newVersionString"
+            Add-Content -Path $env:GITHUB_ENV -Value "release_notes<<EOF"
+            Add-Content -Path $env:GITHUB_ENV -Value $releaseNotes
+            Add-Content -Path $env:GITHUB_ENV -Value "EOF"
+            
+            # Save release notes to file for debugging
             $releaseNotes | Out-File -FilePath "releaseNotes.txt" -Encoding utf8
             
             Write-Host "Successfully generated release notes for version $newVersionString"
