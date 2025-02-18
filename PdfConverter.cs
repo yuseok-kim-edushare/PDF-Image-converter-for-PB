@@ -1,11 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using System.Drawing;
-using System.Drawing.Imaging;
+using System.Linq;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Windows.Threading;
 using System.Collections.Concurrent;
 using PDFtoImage;
 
@@ -18,6 +15,10 @@ namespace PdfToImageConverter
         [ComVisible(true)]
         [DispId(1)]
         string ConvertPdfToImage(string pdfPath, string outputPath, int dpi);
+
+        [ComVisible(true)]
+        [DispId(2)]
+        string ConvertPdfToImageWithPageNames(string pdfPath, string outputPath, int dpi, int totalPagesNumber, string[] pageNames);
     }
 
     [ComVisible(true)]
@@ -104,6 +105,80 @@ namespace PdfToImageConverter
             }
             return outputPath;
         }
+        private string GetPageOutputPathForPageName(string outputPath, string pageName)
+        {
+            string extension = Path.GetExtension(outputPath);
+            string directory = Path.GetDirectoryName(outputPath);
+            return Path.Combine(directory, $"{pageName}{extension}");
+        }
+
+        private RenderOptions CreateRenderOptions(int dpi)
+        {
+            return new RenderOptions(
+                Dpi: dpi,
+                Width: null,
+                Height: null,
+                WithAnnotations: true,
+                WithFormFill: true,
+                WithAspectRatio: true,
+                Rotation: PdfRotation.Rotate0,
+                AntiAliasing: PdfAntiAliasing.All,
+                BackgroundColor: null,
+                Bounds: null,
+                UseTiling: true,
+                DpiRelativeToBounds: false
+            );
+        }
+
+        private string ValidateAndLoadPdf(string pdfPath, string outputPath, int dpi, out byte[] pdfBytes)
+        {
+            pdfBytes = null;
+
+            if (!ValidateFilePath(pdfPath))
+            {
+                return $"Error: Invalid PDF path format: {pdfPath}";
+            }
+
+            if (!ValidateFilePath(outputPath))
+            {
+                return $"Error: Invalid output path format: {outputPath}";
+            }
+
+            if (!File.Exists(pdfPath))
+            {
+                return $"Error: PDF file not found at path: {pdfPath}";
+            }
+
+            if (dpi <= 0 || dpi > 1200)
+            {
+                return $"Error: Invalid DPI value. Must be between 1 and 1200. Got: {dpi}";
+            }
+
+            try
+            {
+                EnsureDirectoryExists(outputPath);
+            }
+            catch (Exception ex)
+            {
+                return $"Error: Failed to create output directory: {ex.Message}";
+            }
+
+            try
+            {
+                pdfBytes = File.ReadAllBytes(pdfPath);
+                int pageCount = PDFtoImage.Conversion.GetPageCount(pdfBytes, null);
+                if (pageCount == 0)
+                {
+                    return "Error: PDF document has no pages";
+                }
+            }
+            catch (Exception ex)
+            {
+                return $"Error: Failed to read PDF file: {ex.Message}";
+            }
+
+            return null; // null means validation passed
+        }
 
         [ComVisible(true)]
         [DispId(1)]
@@ -117,63 +192,15 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Output Path: {outputPath}\n");
                 File.AppendAllText(logPath, $"DPI: {dpi}\n");
 
-                if (!ValidateFilePath(pdfPath))
+                byte[] pdfBytes;
+                string validationError = ValidateAndLoadPdf(pdfPath, outputPath, dpi, out pdfBytes);
+                if (validationError != null)
                 {
-                    return $"Error: Invalid PDF path format: {pdfPath}";
+                    return validationError;
                 }
 
-                if (!ValidateFilePath(outputPath))
-                {
-                    return $"Error: Invalid output path format: {outputPath}";
-                }
-
-                if (!File.Exists(pdfPath))
-                {
-                    return $"Error: PDF file not found at path: {pdfPath}";
-                }
-
-                if (dpi <= 0 || dpi > 1200)
-                {
-                    return $"Error: Invalid DPI value. Must be between 1 and 1200. Got: {dpi}";
-                }
-
-                // Ensure output directory exists before proceeding
-                try
-                {
-                    File.AppendAllText(logPath, "Creating output directory...\n");
-                    EnsureDirectoryExists(outputPath);
-                }
-                catch (Exception ex)
-                {
-                    File.AppendAllText(logPath, $"Failed to create output directory: {ex.Message}\n");
-                    return $"Error: Failed to create output directory: {ex.Message}";
-                }
-
-                // Read the PDF file into a byte array
-                byte[] pdfBytes = File.ReadAllBytes(pdfPath);
-
-                // Get the page count
                 int pageCount = PDFtoImage.Conversion.GetPageCount(pdfBytes, null);
-                if (pageCount == 0)
-                {
-                    return "Error: PDF document has no pages";
-                }
-
-                // Create render options
-                var options = new RenderOptions(
-                    Dpi: dpi,
-                    Width: null,
-                    Height: null,
-                    WithAnnotations: true,
-                    WithFormFill: true,
-                    WithAspectRatio: true,
-                    Rotation: PdfRotation.Rotate0,
-                    AntiAliasing: PdfAntiAliasing.All,
-                    BackgroundColor: null,
-                    Bounds: null,
-                    UseTiling: true,
-                    DpiRelativeToBounds: false
-                );
+                var options = CreateRenderOptions(dpi);
 
                 // Process first page
                 try
@@ -221,5 +248,68 @@ namespace PdfToImageConverter
                 return $"Error: {ex.GetType().Name} - {ex.Message} - Location: {ex.StackTrace}";
             }
         }
-    }
+
+        [ComVisible(true)]
+        [DispId(2)]
+        public string ConvertPdfToImageWithPageNames(string pdfPath, string outputPath, int dpi, int totalPagesNumber, string[] pageNames)
+        {
+            try
+            {
+                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                File.AppendAllText(logPath, $"\n\nStarting conversion at {DateTime.Now}\n");
+                File.AppendAllText(logPath, $"PDF Path: {pdfPath}\n");
+                File.AppendAllText(logPath, $"Output Path: {outputPath}\n");
+                File.AppendAllText(logPath, $"DPI: {dpi}\n");
+                File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
+                File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
+
+                // Validate page names parameters first
+                if (totalPagesNumber < 0 || totalPagesNumber >= pageNames.Length)
+                {
+                    return $"Error: Invalid page number. Must be between 0 and {pageNames.Length - 1}. Got: {totalPagesNumber}";
+                }
+
+                if (pageNames.Length == 0)
+                {
+                    return "Error: Page names array is empty";  
+                }
+
+                if (pageNames.Any(name => string.IsNullOrEmpty(name)))
+                {
+                    return "Error: Page names array contains empty strings";
+                }
+
+                // Use common validation method
+                byte[] pdfBytes;
+                string validationError = ValidateAndLoadPdf(pdfPath, outputPath, dpi, out pdfBytes);
+                if (validationError != null)
+                {
+                    return validationError;
+                }
+
+                int pageCount = PDFtoImage.Conversion.GetPageCount(pdfBytes, null);
+                var options = CreateRenderOptions(dpi);
+
+                // Process the specified page using the page name
+                try
+                {
+                    string pageOutput = GetPageOutputPathForPageName(outputPath, pageNames[totalPagesNumber]);
+                    PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, totalPagesNumber, options);
+                }
+                catch (Exception ex)
+                {
+                    return $"Error processing page {totalPagesNumber} ({pageNames[totalPagesNumber]}): {ex.Message}";
+                }
+
+                return "SUCCESS: PDF converted successfully";
+            }
+            catch (Exception ex)
+            {
+                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                File.AppendAllText(logPath, $"\nError in ConvertPdfToImageWithPageNames: {ex.GetType().Name} - {ex.Message}\n");
+                File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");    
+                return $"Error: {ex.GetType().Name} - {ex.Message} - Location: {ex.StackTrace}";
+            }
+        }
+    }   
 }
