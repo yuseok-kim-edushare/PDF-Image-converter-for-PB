@@ -136,13 +136,13 @@ try {
 
 # Test parameters - adjust these paths as needed
 $pdfPath = Join-Path $PSScriptRoot "test.pdf"  # PDF file in the same directory as the script
-$outputPath = Join-Path $PSScriptRoot "output.png"
+$outputBasePath = Join-Path $PSScriptRoot "output.png"  # Base name for output files
 $dpi = 300
 
 # Display file information
 Write-Host "`nTest Configuration:"
 Write-Host "PDF Path: $pdfPath"
-Write-Host "Output Path: $outputPath"
+Write-Host "Output Base Path: $outputBasePath"
 Write-Host "DPI: $dpi"
 Write-Host "PDF exists: $(Test-Path $pdfPath)"
 
@@ -153,7 +153,7 @@ if (Test-Path $pdfPath) {
 }
 
 Write-Host "`nOutput directory info:"
-$outputDir = Split-Path $outputPath -Parent
+$outputDir = Split-Path $outputBasePath -Parent
 Write-Host "Output directory: $outputDir"
 Write-Host "Directory exists: $(Test-Path $outputDir)"
 Write-Host "Directory is writable: $((Get-Acl $outputDir).AccessToString)"
@@ -179,18 +179,28 @@ try {
     # Convert PDF to image
     Write-Host "`nStarting conversion..."
     Write-Host "PDF Path: $pdfPath (Exists: $(Test-Path $pdfPath))"
-    Write-Host "Output Path: $outputPath"
+    Write-Host "Output Base Path: $outputBasePath"
     Write-Host "DPI: $dpi"
     
-    $result = $converter.ConvertPdfToImage($pdfPath, $outputPath, $dpi)
+    $result = $converter.ConvertPdfToImage($pdfPath, $outputBasePath, $dpi)
     Write-Host "Conversion result: $result"
 
-    # Check if output was created
-    if (Test-Path $outputPath) {
-        $outputInfo = Get-Item $outputPath
-        Write-Host "Output file created: $($outputInfo.Length) bytes"
+    # Check for all generated output files
+    Write-Host "`nChecking generated output files:"
+    $outputDir = Split-Path $outputBasePath -Parent
+    $outputBaseName = [System.IO.Path]::GetFileNameWithoutExtension($outputBasePath)
+    $outputExt = [System.IO.Path]::GetExtension($outputBasePath)
+    
+    # Get all generated output files
+    $outputFiles = Get-ChildItem -Path $outputDir -Filter "$outputBaseName*$outputExt"
+    
+    if ($outputFiles.Count -gt 0) {
+        Write-Host "Found $($outputFiles.Count) output files:"
+        foreach ($file in $outputFiles) {
+            Write-Host "- $($file.Name): $($file.Length) bytes"
+        }
     } else {
-        Write-Host "Warning: Output file was not created" -ForegroundColor Yellow
+        Write-Host "Warning: No output files were created" -ForegroundColor Yellow
     }
 
 } catch {
