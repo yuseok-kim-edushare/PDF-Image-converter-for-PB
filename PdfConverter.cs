@@ -26,6 +26,12 @@ namespace PdfToImageConverter
     [ProgId("PdfToImageConverter.PdfConverter")]
     public class PdfConverter : IPdfConverter
     {
+        static PdfConverter()
+        {
+            // Set encoding for PdfSharp
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+        }
+
         private void EnsureDirectoryExists(string filePath)
         {
             string directory = Path.GetDirectoryName(filePath);
@@ -59,6 +65,77 @@ namespace PdfToImageConverter
                 return Path.Combine(directory, $"{fileNameWithoutExt}_page{pageNumber + 1}{extension}");
             }
             return outputPath;
+        }
+
+        private bool ProcessPage(PdfPage pdfPage, string outputFilePath, int dpi, out string error)
+        {
+            error = null;
+            try
+            {
+                // Calculate dimensions based on DPI
+                double width = pdfPage.Width.Point * (dpi / 72.0);
+                double height = pdfPage.Height.Point * (dpi / 72.0);
+
+                if (width <= 0 || height <= 0)
+                {
+                    error = $"Invalid page dimensions: Width={width}, Height={height}, Original Width={pdfPage.Width.Point}, Original Height={pdfPage.Height.Point}";
+                    return false;
+                }
+
+                // Create bitmap and set its resolution
+                using (var bitmap = new Bitmap(Math.Max(1, (int)width), Math.Max(1, (int)height)))
+                {
+                    bitmap.SetResolution(dpi, dpi);
+
+                    using (Graphics graphics = Graphics.FromImage(bitmap))
+                    {
+                        graphics.Clear(Color.White);
+                        graphics.SmoothingMode = SmoothingMode.HighQuality;
+                        graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                        graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        graphics.CompositingQuality = CompositingQuality.HighQuality;
+
+                        // Create a PDF page for rendering
+                        using (var tempDoc = new PdfDocument())
+                        {
+                            tempDoc.AddPage(pdfPage);
+
+                            using (var ms = new MemoryStream())
+                            {
+                                tempDoc.Save(ms, false);
+                                ms.Position = 0;
+
+                                if (ms.Length == 0)
+                                {
+                                    error = "Failed to save temporary PDF to memory stream";
+                                    return false;
+                                }
+
+                                using (var img = Image.FromStream(ms))
+                                {
+                                    graphics.DrawImage(img, 0, 0, (float)width, (float)height);
+                                }
+                            }
+                        }
+                    }
+
+                    try
+                    {
+                        bitmap.Save(outputFilePath, ImageFormat.Png);
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        error = $"Failed to save image: {ex.Message}";
+                        return false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                error = $"{ex.GetType().Name} - {ex.Message}";
+                return false;
+            }
         }
 
         [ComVisible(true)]
@@ -101,7 +178,18 @@ namespace PdfToImageConverter
                 PdfDocument document = null;
                 try
                 {
+                    // First try to verify the PDF file
+                    if (new FileInfo(pdfPath).Length == 0)
+                    {
+                        return "Error: PDF file is empty";
+                    }
+
                     document = PdfReader.Open(pdfPath, PdfDocumentOpenMode.Import);
+                    
+                    if (document == null)
+                    {
+                        return "Error: Failed to open PDF document (null document returned)";
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -115,76 +203,49 @@ namespace PdfToImageConverter
                         return "Error: PDF document has no pages";
                     }
 
-                    var exceptions = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
-
-                    Parallel.For(0, document.PageCount, pageNumber =>
+                    // Process first page
+                    var firstPage = document.Pages[0];
+                    if (firstPage == null)
                     {
-                        try
+                        return "Error: First page is null";
+                    }
+
+                    string firstPageOutput = GetPageOutputPath(outputPath, 0, document.PageCount);
+                    string error;
+                    if (!ProcessPage(firstPage, firstPageOutput, dpi, out error))
+                    {
+                        return $"Error processing first page: {error}";
+                    }
+
+                    // If first page succeeds and there are more pages, process them
+                    if (document.PageCount > 1)
+                    {
+                        var exceptions = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
+                        
+                        Parallel.For(1, document.PageCount, pageNumber =>
                         {
-                            var page = document.Pages[pageNumber];
-
-                            // Calculate dimensions based on DPI
-                            double width = page.Width.Point * (dpi / 72.0);
-                            double height = page.Height.Point * (dpi / 72.0);
-
-                            if (width <= 0 || height <= 0)
+                            try
                             {
-                                throw new ArgumentException($"Invalid page dimensions: Width={width}, Height={height}");
-                            }
-
-                            string pageOutputPath = GetPageOutputPath(outputPath, pageNumber, document.PageCount);
-
-                            // Create bitmap and set its resolution
-                            using (var bitmap = new Bitmap((int)width, (int)height))
-                            {
-                                bitmap.SetResolution(dpi, dpi);
-
-                                using (Graphics graphics = Graphics.FromImage(bitmap))
+                                var page = document.Pages[pageNumber];
+                                string pageOutput = GetPageOutputPath(outputPath, pageNumber, document.PageCount);
+                                
+                                string pageError;
+                                if (!ProcessPage(page, pageOutput, dpi, out pageError))
                                 {
-                                    graphics.Clear(Color.White);
-                                    graphics.SmoothingMode = SmoothingMode.HighQuality;
-                                    graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                                    graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                                    graphics.CompositingQuality = CompositingQuality.HighQuality;
-
-                                    // Create a PDF page for rendering
-                                    using (var tempDoc = new PdfDocument())
-                                    {
-                                        tempDoc.AddPage(page);
-
-                                        using (var ms = new MemoryStream())
-                                        {
-                                            tempDoc.Save(ms, false);
-                                            ms.Position = 0;
-
-                                            using (var img = Image.FromStream(ms))
-                                            {
-                                                graphics.DrawImage(img, 0, 0, (float)width, (float)height);
-                                            }
-                                        }
-                                    }
-                                }
-
-                                try
-                                {
-                                    bitmap.Save(pageOutputPath, ImageFormat.Png);
-                                }
-                                catch (Exception ex)
-                                {
-                                    throw new Exception($"Failed to save image to {pageOutputPath}: {ex.Message}", ex);
+                                    throw new Exception(pageError);
                                 }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            exceptions.Enqueue(ex);
-                        }
-                    });
+                            catch (Exception ex)
+                            {
+                                exceptions.Enqueue(ex);
+                            }
+                        });
 
-                    if (exceptions.Count > 0)
-                    {
-                        var firstEx = exceptions.TryDequeue(out var ex) ? ex : null;
-                        return $"Error: {firstEx?.GetType().Name} - {firstEx?.Message}";
+                        if (exceptions.Count > 0)
+                        {
+                            var firstEx = exceptions.TryDequeue(out var ex) ? ex : null;
+                            return $"Error: {firstEx?.GetType().Name} - {firstEx?.Message}";
+                        }
                     }
                 }
 

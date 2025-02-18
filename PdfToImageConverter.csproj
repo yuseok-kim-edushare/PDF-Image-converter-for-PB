@@ -36,6 +36,12 @@
     <Reference Include="PdfSharp">
       <HintPath>packages\PdfSharp.6.1.1\lib\netstandard2.0\PdfSharp.dll</HintPath>
     </Reference>
+        <Reference Include="System.Text.Encoding.CodePages">
+      <HintPath>packages\System.Text.Encoding.CodePages.7.0.0\lib\net462\System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PdfConverter.cs" />
