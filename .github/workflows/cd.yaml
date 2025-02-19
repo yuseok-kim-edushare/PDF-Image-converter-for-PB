@@ -81,7 +81,7 @@ jobs:
             $filesToDelete = @(
                 "$releaseDir\x64\libpdfium.so",
                 "$releaseDir\x64\libskiasharp.so",
-                "$releaseDir\x86\libpdfium.so",
+                "$releaseDir\x86\libpdfium.so"
             )
 
             foreach ($file in $filesToDelete) {
