@@ -41,6 +41,10 @@ jobs:
       run: |
         dotnet build PdfToImageConverter.csproj --configuration ${{ env.BUILD_CONFIG }} --no-restore
 
+    - name: Install ILRepack
+      run: |
+        nuget install ILRepack -Version 2.0.18 -OutputDirectory ${{ github.workspace }}\packages
+
     - name: Prepare Release Files
       shell: pwsh
       run: |
@@ -53,19 +57,31 @@ jobs:
         
         # Copy all build artifacts recursively
         if (Test-Path $buildPath) {
-            Copy-Item -Path "$buildPath\*.dll" -Destination $releaseDir -Recurse -Force
             Copy-Item -Path "$buildPath\x64\*" -Destination $releaseDir -Recurse -Force
             Copy-Item -Path "$buildPath\x86\*" -Destination $releaseDir -Recurse -Force
             Write-Host "Copied build artifacts from $buildPath to $releaseDir"
-            
+
+            # Merge NET 4.8.1 DLLs (using ILRepack)
+            ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:$releaseDir\PdfToImageConverter.dll `
+                   /lib:$buildPath`
+                   /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework64\v4.0.30319" `
+                   /union `
+                   /copyattrs `
+                   /internalize `
+                   $buildPath\PdfToImageConverter.dll `
+                   $buildPath\Microsoft.Extensions.Logging.Abstractions.dll `
+                   $buildPath\PDFtoImage.dll `
+                   $buildPath\SkiaSharp.dll `
+                   $buildPath\System.Buffers.dll `
+                   $buildPath\System.Memory.dll `
+                   $buildPath\System.Numerics.Vectors.dll `
+                   $buildPath\System.Runtime.CompilerServices.Unsafe.dll
+
             # Delete unnecessary files
             $filesToDelete = @(
                 "$releaseDir\x64\libpdfium.so",
                 "$releaseDir\x64\libskiasharp.so",
                 "$releaseDir\x86\libpdfium.so",
-                "$releaseDir\libpdfium.dylib",
-                "$releaseDir\libskiasharp.dylib",
-                "$releaseDir\PdfToImageConverter.pdb"
             )
 
             foreach ($file in $filesToDelete) {
