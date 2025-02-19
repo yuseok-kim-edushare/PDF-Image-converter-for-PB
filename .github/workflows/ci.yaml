@@ -33,6 +33,36 @@ jobs:
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug
 
+    - name: Install ILRepack and merge DLLs
+      run: |
+        nuget install ILRepack -Version 2.0.18 -OutputDirectory ${{ github.workspace }}\packages
+        $buildPath = ${{ github.workspace }}\bin\Debug\net481
+        ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:"$buildPath\merged\PdfToImageConverter.dll" `
+                /lib:"$buildPath" `
+                /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework64\v4.0.30319" `
+                /union `
+                /copyattrs `
+                /internalize `
+                "$buildPath\PdfToImageConverter.dll" `
+                "$buildPath\Microsoft.Extensions.Logging.Abstractions.dll" `
+                "$buildPath\PDFtoImage.dll" `
+                "$buildPath\SkiaSharp.dll" `
+                "$buildPath\System.Buffers.dll" `
+                "$buildPath\System.Memory.dll" `
+                "$buildPath\System.Numerics.Vectors.dll" `
+                "$buildPath\System.Runtime.CompilerServices.Unsafe.dll"
+
+    - name: Prepare test execution
+      run: |
+        Remove-Item -Path $buildPath\PdfToImageConverter.dll -Force
+        Remove-Item -Path $buildPath\Microsoft.Extensions.Logging.Abstractions.dll -Force
+        Remove-Item -Path $buildPath\PDFtoImage.dll -Force
+        Remove-Item -Path $buildPath\SkiaSharp.dll -Force
+        Remove-Item -Path $buildPath\System.Buffers.dll -Force
+        Remove-Item -Path $buildPath\System.Memory.dll -Force
+        Remove-Item -Path $buildPath\System.Numerics.Vectors.dll -Force
+        Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
+
     - name: Run Integration Test 1 (test_converter.ps1)
       shell: pwsh
       run: |
