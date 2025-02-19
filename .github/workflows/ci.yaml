@@ -63,6 +63,7 @@ jobs:
         Remove-Item -Path $buildPath\System.Memory.dll -Force
         Remove-Item -Path $buildPath\System.Numerics.Vectors.dll -Force
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
+        Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
 
     - name: Run Integration Test 1 (test_converter.ps1)
       shell: pwsh
