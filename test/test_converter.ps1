@@ -1,4 +1,4 @@
-# Test script for PDF to Image Converter
+# Test script for PDF to Image Converter - Combined Tests
 
 # Kill any running instances of the test
 Get-Process | Where-Object {$_.ProcessName -like "*PdfToImageConverter*" -or $_.ProcessName -like "*RegAsm*"} | Stop-Process -Force -ErrorAction SilentlyContinue
@@ -32,24 +32,22 @@ function Copy-WithLogging {
     }
     
     try {
-        # Create destination if it doesn't exist
         if (!(Test-Path $destination)) {
             New-Item -ItemType Directory -Path $destination -Force | Out-Null
             Write-Host "Created directory: $destination"
         }
         
-        # Use robocopy for reliable copying
         $robocopyArgs = @(
             $source
             $destination
             $filter
-            "/E"      # Copy subdirectories, including empty ones
-            "/R:3"    # Number of retries
-            "/W:1"    # Wait time between retries
-            "/NFL"    # No file list - don't log file names
-            "/NDL"    # No directory list - don't log directory names
-            "/NJH"    # No job header
-            "/NJS"    # No job summary
+            "/E"
+            "/R:3"
+            "/W:1"
+            "/NFL"
+            "/NDL"
+            "/NJH"
+            "/NJS"
         )
         
         $result = Start-Process "robocopy" -ArgumentList $robocopyArgs -NoNewWindow -Wait -PassThru
@@ -83,7 +81,6 @@ Get-ChildItem -Filter "*.dll" | ForEach-Object {
     Write-Host "Size: $($_.Length) bytes"
     Write-Host "Last Modified: $($_.LastWriteTime)"
     
-    # Get assembly details
     try {
         $assembly = [System.Reflection.Assembly]::LoadFile($_.FullName)
         Write-Host "Assembly Full Name: $($assembly.FullName)"
@@ -99,7 +96,6 @@ $assemblyResolver = [System.ResolveEventHandler] {
     param($sender, $args)
     Write-Host "Attempting to resolve assembly: $($args.Name)"
     
-    # Check if the DLL exists in the current directory
     $assemblyName = [System.Reflection.AssemblyName]::GetAssemblyName($args.Name)
     $dllPath = Join-Path $PSScriptRoot "$($assemblyName.Name).dll"
     
@@ -134,16 +130,20 @@ try {
     exit 1
 }
 
-# Test parameters - adjust these paths as needed
-$pdfPath = Join-Path $PSScriptRoot "test.pdf"  # PDF file in the same directory as the script
-$outputBasePath = Join-Path $PSScriptRoot "output.png"  # Base name for output files
+# Test parameters
+$pdfPath = Join-Path $PSScriptRoot "test.pdf"
+$outputBasePath = Join-Path $PSScriptRoot "output.png"
 $dpi = 300
+$totalPagesNumber = 2  # Our test.pdf has 2 pages
+$pageNames = [string[]]@("Apple", "Banana")  # Explicitly typed string array for COM interop
 
-# Display file information
+# Display test configuration
 Write-Host "`nTest Configuration:"
 Write-Host "PDF Path: $pdfPath"
 Write-Host "Output Base Path: $outputBasePath"
 Write-Host "DPI: $dpi"
+Write-Host "Total PDF Pages: $totalPagesNumber"
+Write-Host "Page Names: $($pageNames -join ', ')"
 Write-Host "PDF exists: $(Test-Path $pdfPath)"
 
 if (Test-Path $pdfPath) {
@@ -158,41 +158,87 @@ Write-Host "Output directory: $outputDir"
 Write-Host "Directory exists: $(Test-Path $outputDir)"
 Write-Host "Directory is writable: $((Get-Acl $outputDir).AccessToString)"
 
-# Create COM object
-$converter = $null
-try {
-    Write-Host "`nAttempting to create COM object..."
+# Function to check for errors in test output
+function Test-ForErrors {
+    param (
+        [string[]]$output
+    )
     
-    # First verify the type is registered
-    $type = [Type]::GetTypeFromProgID("PdfToImageConverter.PdfConverter")
-    if ($type -eq $null) {
-        Write-Host "Error: COM type not found in registry. Registration may have failed." -ForegroundColor Red
-        exit 1
+    $hasErrors = $output | Where-Object { 
+        $_ -like "*Error:*" -or 
+        $_ -like "*Error processing first page:*" -or
+        $_ -like "*Error Type:*"
     }
-    Write-Host "COM type found in registry: $($type.FullName)"
     
-    # Try to create the object
-    Write-Host "Creating COM object instance..."
+    if ($hasErrors) {
+        Write-Error "Test failed with errors:"
+        $hasErrors | ForEach-Object { Write-Error $_ }
+        return $true
+    }
+    return $false
+}
+
+# Create COM object and run tests
+$converter = $null
+$testsFailed = $false
+
+try {
+    Write-Host "`nCreating COM object..."
     $converter = New-Object -ComObject PdfToImageConverter.PdfConverter
     Write-Host "Successfully created COM object"
 
-    # Convert PDF to image
-    Write-Host "`nStarting conversion..."
-    Write-Host "PDF Path: $pdfPath (Exists: $(Test-Path $pdfPath))"
-    Write-Host "Output Base Path: $outputBasePath"
-    Write-Host "DPI: $dpi"
-    
+    # Test 1: Basic PDF to Image conversion
+    Write-Host "`n=== Running Test 1: Basic PDF to Image Conversion ==="
+    Write-Host "Starting conversion..."
+    $output = @()
     $result = $converter.ConvertPdfToImage($pdfPath, $outputBasePath, $dpi)
-    Write-Host "Conversion result: $result"
-
-    # Check for all generated output files
-    Write-Host "`nChecking generated output files:"
-    $outputDir = Split-Path $outputBasePath -Parent
-    $outputBaseName = [System.IO.Path]::GetFileNameWithoutExtension($outputBasePath)
-    $outputExt = [System.IO.Path]::GetExtension($outputBasePath)
+    $output += "Conversion result: $result"
     
-    # Get all generated output files
-    $outputFiles = Get-ChildItem -Path $outputDir -Filter "$outputBaseName*$outputExt"
+    if (Test-ForErrors $output) {
+        $testsFailed = $true
+    } else {
+        Write-Host "Test 1 completed successfully"
+    }
+
+    # Clean up output files between tests
+    Remove-Item -Path "$outputDir\output*.png" -Force -ErrorAction SilentlyContinue
+    
+    # Test 2: PDF to Image conversion with page names
+    Write-Host "`n=== Running Test 2: PDF to Image Conversion with Page Names ==="
+    Write-Host "Starting conversion..."
+    $output = @()
+    
+    # Convert the array to a proper COM-compatible type
+    $comPageNames = [System.Runtime.InteropServices.Marshal]::AllocCoTaskMem($totalPagesNumber * [System.IntPtr]::Size)
+    try {
+        for ($i = 0; $i -lt $totalPagesNumber; $i++) {
+            $bstr = [System.Runtime.InteropServices.Marshal]::StringToBSTR($pageNames[$i])
+            [System.Runtime.InteropServices.Marshal]::WriteIntPtr($comPageNames, $i * [System.IntPtr]::Size, $bstr)
+        }
+        
+        $result = $converter.ConvertPdfToImageWithPageNames($pdfPath, $outputBasePath, $dpi, $totalPagesNumber, $comPageNames)
+        $output += "Conversion result: $result"
+    }
+    finally {
+        # Clean up allocated memory
+        for ($i = 0; $i -lt $totalPagesNumber; $i++) {
+            $ptr = [System.Runtime.InteropServices.Marshal]::ReadIntPtr($comPageNames, $i * [System.IntPtr]::Size)
+            if ($ptr -ne [System.IntPtr]::Zero) {
+                [System.Runtime.InteropServices.Marshal]::FreeBSTR($ptr)
+            }
+        }
+        [System.Runtime.InteropServices.Marshal]::FreeCoTaskMem($comPageNames)
+    }
+    
+    if (Test-ForErrors $output) {
+        $testsFailed = $true
+    } else {
+        Write-Host "Test 2 completed successfully"
+    }
+
+    # Check for generated output files
+    Write-Host "`nChecking generated output files:"
+    $outputFiles = Get-ChildItem -Path $outputDir -Filter "*.png"
     
     if ($outputFiles.Count -gt 0) {
         Write-Host "Found $($outputFiles.Count) output files:"
@@ -201,6 +247,7 @@ try {
         }
     } else {
         Write-Host "Warning: No output files were created" -ForegroundColor Yellow
+        $testsFailed = $true
     }
 
 } catch {
@@ -208,15 +255,7 @@ try {
     Write-Host "Error Message: $($_.Exception.Message)"
     Write-Host "Error Type: $($_.Exception.GetType().FullName)"
     Write-Host "Stack Trace: $($_.Exception.StackTrace)"
-    
-    # Get more details about COM registration
-    Write-Host "`nChecking COM registration details:"
-    $regPath = "HKLM:\SOFTWARE\Classes\PdfToImageConverter.PdfConverter"
-    if (Test-Path $regPath) {
-        Get-ItemProperty $regPath | Format-List
-    } else {
-        Write-Host "COM registration not found in registry" -ForegroundColor Yellow
-    }
+    $testsFailed = $true
 } finally {
     if ($converter) {
         # Properly release COM object
@@ -238,4 +277,11 @@ try {
     } catch {
         Write-Host "Error unregistering COM object: $_" -ForegroundColor Red
     }
+}
+
+if ($testsFailed) {
+    exit 1
+} else {
+    Write-Host "`nAll tests completed successfully!" -ForegroundColor Green
+    exit 0
 } 

@@ -65,40 +65,15 @@ jobs:
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
 
-    - name: Run Integration Test 1 (test_converter.ps1)
+    - name: Run Integration Tests
       shell: pwsh
       run: |
         cd test
         $output = .\test_converter.ps1 *>&1
         $output | ForEach-Object { Write-Host $_ }
         
-        $hasErrors = $output | Where-Object { 
-            $_ -like "*Error:*" -or 
-            $_ -like "*Error processing first page:*"  -or
-            $_ -like "*Error Type:*"
-        }
-        if ($hasErrors) {
-            Write-Error "Test failed with errors:"
-            $hasErrors | ForEach-Object { Write-Error $_ }
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Tests failed with exit code: $LASTEXITCODE"
             exit 1
         }
-        Write-Host "Test 1 completed successfully"
-    
-    - name: Run Integration Test 2 (test_converter_with_page_names.ps1)
-      shell: pwsh
-      run: |
-        cd test
-        $output = .\test_converter_with_page_names.ps1 *>&1
-        $output | ForEach-Object { Write-Host $_ }
-
-        $hasErrors = $output | Where-Object { 
-            $_ -like "*Error:*" -or 
-            $_ -like "*Error processing first page:*"  -or
-            $_ -like "*Error Type:*"
-        }
-        if ($hasErrors) {
-            Write-Error "Test failed with errors:"
-            $hasErrors | ForEach-Object { Write-Error $_ }
-            exit 1
-        }
-        Write-Host "Test 2 completed successfully"
+        Write-Host "All tests completed successfully"
