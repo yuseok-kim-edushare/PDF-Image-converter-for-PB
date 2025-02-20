@@ -74,7 +74,8 @@ jobs:
         
         $hasErrors = $output | Where-Object { 
             $_ -like "*Error:*" -or 
-            $_ -like "*Error processing first page:*" 
+            $_ -like "*Error processing first page:*"  -or
+            $_ -like "*Error Type:*"
         }
         if ($hasErrors) {
             Write-Error "Test failed with errors:"
