@@ -76,7 +76,7 @@ if (!$copySuccess) {
 
 # Verify DLLs exist and show all DLLs in directory
 Write-Host "`nVerifying DLLs:"
-Get-ChildItem -Filter "*.dll" | ForEach-Object {
+Get-ChildItem -Filter "PdfToImageConverter.dll" | ForEach-Object {
     Write-Host "$($_.Name) exists: True"
     Write-Host "Size: $($_.Length) bytes"
     Write-Host "Last Modified: $($_.LastWriteTime)"
@@ -90,24 +90,6 @@ Get-ChildItem -Filter "*.dll" | ForEach-Object {
     }
     Write-Host ""
 }
-
-# Add assembly resolution handler
-$assemblyResolver = [System.ResolveEventHandler] {
-    param($sender, $args)
-    Write-Host "Attempting to resolve assembly: $($args.Name)"
-    
-    $assemblyName = [System.Reflection.AssemblyName]::GetAssemblyName($args.Name)
-    $dllPath = Join-Path $PSScriptRoot "$($assemblyName.Name).dll"
-    
-    if (Test-Path $dllPath) {
-        Write-Host "Found assembly at: $dllPath"
-        return [System.Reflection.Assembly]::LoadFrom($dllPath)
-    }
-    
-    Write-Host "Assembly not found in current directory"
-    return $null
-}
-[System.AppDomain]::CurrentDomain.add_AssemblyResolve($assemblyResolver)
 
 # Register the COM object
 try {
@@ -123,8 +105,24 @@ try {
         exit 1
     }
     
-    $regasmOutput = & $regasmPath "PdfToImageConverter.dll" /codebase
+    # First unregister if it exists
+    & $regasmPath "PdfToImageConverter.dll" /unregister 2>&1 | Out-Null
+    Start-Sleep -Seconds 1
+    
+    # Ensure native dependencies are in the current directory
+    $nativeDllPath1 = Join-Path $PSScriptRoot "libSkiaSharp.dll"
+    if (!(Test-Path $nativeDllPath1)) {
+        Write-Host "Error: Could not find native SkiaSharp DLL" -ForegroundColor Red
+    }
+    $nativeDllPath2 = Join-Path $PSScriptRoot "pdfium.dll"
+    if (!(Test-Path $nativeDllPath2)) {
+        Write-Host "Error: Could not find native pdfium DLL" -ForegroundColor Red
+    }    
+
+    # Register the COM object
+    $regasmOutput = & $regasmPath "PdfToImageConverter.dll" /codebase /tlb
     Write-Host $regasmOutput
+    Start-Sleep -Seconds 1
 } catch {
     Write-Host "Error registering COM object: $_" -ForegroundColor Red
     exit 1
@@ -135,7 +133,7 @@ $pdfPath = Join-Path $PSScriptRoot "test.pdf"
 $outputBasePath = Join-Path $PSScriptRoot "output.png"
 $dpi = 300
 $totalPagesNumber = 2  # Our test.pdf has 2 pages
-$pageNames = [string[]]@("Apple", "Banana")  # Explicitly typed string array for COM interop
+$pageNames = [string[]]@("Apple", "Banana")
 
 # Display test configuration
 Write-Host "`nTest Configuration:"
@@ -208,26 +206,36 @@ try {
     Write-Host "Starting conversion..."
     $output = @()
     
-    # Convert the array to a proper COM-compatible type
-    $comPageNames = [System.Runtime.InteropServices.Marshal]::AllocCoTaskMem($totalPagesNumber * [System.IntPtr]::Size)
     try {
+        Write-Host "Page names type: $($pageNames.GetType().FullName)"
+        Write-Host "Page names: $($pageNames -join ', ')"
+        
+        # Create a strongly-typed string array for COM
+        $comArray = [string[]]::new($totalPagesNumber)
         for ($i = 0; $i -lt $totalPagesNumber; $i++) {
-            $bstr = [System.Runtime.InteropServices.Marshal]::StringToBSTR($pageNames[$i])
-            [System.Runtime.InteropServices.Marshal]::WriteIntPtr($comPageNames, $i * [System.IntPtr]::Size, $bstr)
+            $comArray[$i] = $pageNames[$i]
         }
         
-        $result = $converter.ConvertPdfToImageWithPageNames($pdfPath, $outputBasePath, $dpi, $totalPagesNumber, $comPageNames)
+        Write-Host "Calling COM method..."
+        # Call the COM method directly with the string array
+        $result = $converter.ConvertPdfToImageWithPageNames(
+            [string]$pdfPath,
+            [string]$outputBasePath,
+            [int]$dpi,
+            [int]$totalPagesNumber,
+            $comArray
+        )
         $output += "Conversion result: $result"
     }
-    finally {
-        # Clean up allocated memory
-        for ($i = 0; $i -lt $totalPagesNumber; $i++) {
-            $ptr = [System.Runtime.InteropServices.Marshal]::ReadIntPtr($comPageNames, $i * [System.IntPtr]::Size)
-            if ($ptr -ne [System.IntPtr]::Zero) {
-                [System.Runtime.InteropServices.Marshal]::FreeBSTR($ptr)
-            }
+    catch {
+        Write-Host "Error in Test 2:" -ForegroundColor Red
+        Write-Host "Error Message: $($_.Exception.Message)"
+        if ($_.Exception.InnerException) {
+            Write-Host "Inner Exception: $($_.Exception.InnerException.Message)"
         }
-        [System.Runtime.InteropServices.Marshal]::FreeCoTaskMem($comPageNames)
+        Write-Host "Stack Trace:"
+        Write-Host $_.ScriptStackTrace
+        $testsFailed = $true
     }
     
     if (Test-ForErrors $output) {
@@ -257,7 +265,7 @@ try {
     Write-Host "Stack Trace: $($_.Exception.StackTrace)"
     $testsFailed = $true
 } finally {
-    if ($converter) {
+    if ($null -ne $converter) {
         # Properly release COM object
         try {
             [System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($converter) | Out-Null
