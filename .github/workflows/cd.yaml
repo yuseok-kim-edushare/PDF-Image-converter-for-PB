@@ -49,7 +49,7 @@ jobs:
       shell: pwsh
       run: |
         # Define paths
-        $buildPath = "${{ github.workspace }}\bin\${{ env.BUILD_CONFIG }}\${{ env.NET_VERSION }}"
+        $buildPath = "${{ github.workspace }}\bin\x86\${{ env.BUILD_CONFIG }}\${{ env.NET_VERSION }}"
         $releaseDir = "${{ github.workspace }}\release-files"
         
         # Create release directory
