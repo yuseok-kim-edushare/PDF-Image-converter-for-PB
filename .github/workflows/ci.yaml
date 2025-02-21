@@ -31,16 +31,18 @@ jobs:
     
     - name: Build solution for testing
       run: |
-        dotnet build PdfToImageConverter.csproj --configuration Debug
+        dotnet build PdfToImageConverter.csproj --configuration Debug -p:Platform=x86
 
     - name: Install ILRepack and merge DLLs
       run: |
         nuget install ILRepack -Version 2.0.18 -OutputDirectory ${{ github.workspace }}\packages
         $buildPath = "${{ github.workspace }}\bin\x86\Debug\net481"
+        New-Item -Path "$buildPath\merged" -ItemType Directory -Force
         ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:"$buildPath\merged\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
                 /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
+                /copyattrs `
                 /internalize `
                 "$buildPath\PdfToImageConverter.dll" `
                 "$buildPath\Microsoft.Extensions.Logging.Abstractions.dll" `

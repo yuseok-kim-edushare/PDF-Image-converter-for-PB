@@ -39,7 +39,7 @@ jobs:
     
     - name: Build solution for release
       run: |
-        dotnet build PdfToImageConverter.csproj --configuration ${{ env.BUILD_CONFIG }} --no-restore
+        dotnet build PdfToImageConverter.csproj --configuration ${{ env.BUILD_CONFIG }} --no-restore -p:Platform=x86
 
     - name: Install ILRepack
       run: |
@@ -65,6 +65,7 @@ jobs:
                 /lib:"$buildPath" `
                 /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
+                /copyattrs `
                 /internalize `
                 "$buildPath\PdfToImageConverter.dll" `
                 "$buildPath\Microsoft.Extensions.Logging.Abstractions.dll" `
