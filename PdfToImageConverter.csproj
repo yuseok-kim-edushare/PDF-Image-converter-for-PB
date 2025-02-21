@@ -8,6 +8,8 @@
     <AssemblyOriginatorKeyFile>PdfToImageConverter.snk</AssemblyOriginatorKeyFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWPF>true</UseWPF>
+    <Platform>x86</Platform>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
