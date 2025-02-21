@@ -49,7 +49,7 @@ jobs:
       shell: pwsh
       run: |
         # Define paths
-        $buildPath = "${{ github.workspace }}\bin\x86\${{ env.BUILD_CONFIG }}\${{ env.NET_VERSION }}"
+        $buildPath = "${{ github.workspace }}\bin\${{ env.BUILD_CONFIG }}\${{ env.NET_VERSION }}"
         $releaseDir = "${{ github.workspace }}\release-files"
         
         # Create release directory
@@ -58,7 +58,7 @@ jobs:
         # Copy all build artifacts recursively
         if (Test-Path $buildPath) {
             Copy-Item -Path "$buildPath\x86\*" -Destination $releaseDir -Recurse -Force
-            Write-Host "Copied build artifacts from $buildPath to $releaseDir"
+            Write-Host "Copied native dlls from $buildPath to $releaseDir"
 
             # Merge NET 4.8.1 DLLs (using ILRepack)
             ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:"$releaseDir\PdfToImageConverter.dll" `
