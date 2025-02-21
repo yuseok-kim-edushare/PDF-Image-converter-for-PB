@@ -39,7 +39,7 @@ jobs:
     
     - name: Build solution for release
       run: |
-        dotnet build PdfToImageConverter.csproj --configuration ${{ env.BUILD_CONFIG }} --no-restore -p:Platform=x86
+        dotnet build PdfToImageConverter.csproj --configuration ${{ env.BUILD_CONFIG }} --no-restore
 
     - name: Install ILRepack
       run: |
