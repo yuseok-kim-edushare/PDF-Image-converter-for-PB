@@ -63,7 +63,7 @@ jobs:
             # Merge NET 4.8.1 DLLs (using ILRepack)
             ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:"$releaseDir\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
-                /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework64\v4.0.30319" `
+                /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
                 /copyattrs `
                 /internalize `

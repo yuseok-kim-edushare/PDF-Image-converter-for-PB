@@ -39,7 +39,7 @@ jobs:
         $buildPath = "${{ github.workspace }}\bin\Debug\net481"
         ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:"$buildPath\merged\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
-                /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework64\v4.0.30319" `
+                /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
                 /copyattrs `
                 /internalize `
