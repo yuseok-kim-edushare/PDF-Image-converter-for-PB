@@ -8,15 +8,7 @@
     <AssemblyOriginatorKeyFile>PdfToImageConverter.snk</AssemblyOriginatorKeyFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWPF>true</UseWPF>
-    <ComVisible>true</ComVisible>
-    <Platform>x86</Platform>
-    <PlatformTarget>x86</PlatformTarget>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Platform)'=='x86'">
-    <OutputPath>bin\x86\$(Configuration)\</OutputPath>
-    <IntermediateOutputPath>obj\x86\$(Configuration)\</IntermediateOutputPath>
+    <DelaySign>false</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>
