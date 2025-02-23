@@ -51,11 +51,7 @@ jobs:
                 "$buildPath\System.Buffers.dll" `
                 "$buildPath\System.Memory.dll" `
                 "$buildPath\System.Numerics.Vectors.dll" `
-                "$buildPath\System.Runtime.CompilerServices.Unsafe.dll" `
-                "$buildPath\Microsoft.Bcl.AsyncInterfaces.dll" `
-                "$buildPath\System.Threading.Tasks.Extensions.dll" `
-                "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll" `
-                "$buildPath\System.Diagnostics.DiagnosticSource.dll"
+                "$buildPath\System.Runtime.CompilerServices.Unsafe.dll"
 
     - name: Prepare test execution
       run: |
@@ -68,10 +64,6 @@ jobs:
         Remove-Item -Path $buildPath\System.Memory.dll -Force
         Remove-Item -Path $buildPath\System.Numerics.Vectors.dll -Force
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
-        Remove-Item -Path $buildPath\Microsoft.Bcl.AsyncInterfaces.dll -Force
-        Remove-Item -Path $buildPath\System.Threading.Tasks.Extensions.dll -Force
-        Remove-Item -Path $buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll -Force
-        Remove-Item -Path $buildPath\System.Diagnostics.DiagnosticSource.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
 
     - name: Run Integration Tests
