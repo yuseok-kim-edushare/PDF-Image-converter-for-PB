@@ -8,7 +8,7 @@
     <AssemblyOriginatorKeyFile>PdfToImageConverter.snk</AssemblyOriginatorKeyFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWPF>true</UseWPF>
-    <DelaySign>false</DelaySign>
+    <DelaySign>true</DelaySign>
   </PropertyGroup>
 
   <ItemGroup>
