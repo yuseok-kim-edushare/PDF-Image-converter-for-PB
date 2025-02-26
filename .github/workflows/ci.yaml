@@ -56,7 +56,7 @@ jobs:
 
     - name: Prepare test execution
       run: |
-        $buildPath = "${{ github.workspace }}\bin\Debug\net481"
+        $buildPath = "${{ github.workspace }}\bin\Debug\net481\win-x86"
         Remove-Item -Path $buildPath\PdfToImageConverter.dll -Force
         Remove-Item -Path $buildPath\Microsoft.Extensions.Logging.Abstractions.dll -Force
         Remove-Item -Path $buildPath\PDFtoImage.dll -Force
