@@ -22,7 +22,7 @@ Remove-Item -Path ".\runtimes" -Recurse -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 1
 
 # Define source and destination paths
-$sourceDir = "..\bin\Debug\net481"
+$sourceDir = "..\bin\Debug\net481\win-x86"
 $destDir = "."
 
 Write-Host "`nCopying build artifacts from: $sourceDir"
