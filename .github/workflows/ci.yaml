@@ -36,7 +36,7 @@ jobs:
     - name: Install ILRepack and merge DLLs
       run: |
         nuget install ILRepack -Version 2.0.18 -OutputDirectory ${{ github.workspace }}\packages
-        $buildPath = "${{ github.workspace }}\bin\Debug\net481"
+        $buildPath = "${{ github.workspace }}\bin\Debug\net481\win-x86"
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
         ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:"$buildPath\merged\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
