@@ -66,6 +66,8 @@ jobs:
         Remove-Item -Path $buildPath\System.Numerics.Vectors.dll -Force
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
+        Move-Item -Path $buildPath\x86\libSkiaSharp.dll -Destination $buildPath
+        Move-Item -Path $buildPath\x86\pdfium.dll -Destination $buildPath
 
     - name: Run Integration Tests
       shell: pwsh
