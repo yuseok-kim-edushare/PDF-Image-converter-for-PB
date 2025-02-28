@@ -71,6 +71,8 @@ $RECYCLE.BIN/
 
 # nuget exe for without vs enviroment
 nuget.exe
+
+#test directory to avoid unexpected artifact
 test/PdfSharp.dll
 test/PdfSharp.xml
 test/PdfToImageConverter.dll
