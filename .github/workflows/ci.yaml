@@ -82,14 +82,21 @@ jobs:
 
     - name: Install Powerbuilder Runtime 2019 and 2022
       run: |
-      $msiPath = "${{ github.workspace }}\test\PBCLTRT 19.2.0.2728.msi"
-      Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
-      $msiPath = "${{ github.workspace }}\test\PBCLTRT 22.2.0.3397.msi"
-      Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
+        $msiPath = "${{ github.workspace }}\test\PBCLTRT 19.2.0.2728.msi"
+        Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
+        $msiPath = "${{ github.workspace }}\test\PBCLTRT 22.2.0.3397.msi"
+        Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
         
     - name: Run Integration Tests with Powerbuilder Runtime 2019
       shell: pwsh
       run: |
+        $inputPath = "${{ github.workspace }}\test\test.pdf"
+        $outputPath = "${{ github.workspace }}\test\output.png"
+        cd test
+        Move-Item -Path .\PB2019R3\test.exe -Destination .\ -Force
+        Move-Item -Path .\PB2019R3\test.ini -Destination .\ -Force
+        Move-Item -Path .\PB2019R3\test.pbd -Destination .\ -Force
+        test.exe $inputPath $outputPath
         # Read and validate test results from ini file
         $iniContent = Get-Content ".\test.ini" -Raw
         $tests = @('test 1', 'test 2')
@@ -120,6 +127,3 @@ jobs:
         }
         
         Write-Host "All Powerbuilder tests completed successfully"
-
-        
-        
