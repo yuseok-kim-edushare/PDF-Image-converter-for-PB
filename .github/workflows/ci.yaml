@@ -67,7 +67,7 @@ jobs:
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
 
-    - name: Run Integration Tests
+    - name: Run Integration Tests with COM object and PowerShell
       shell: pwsh
       run: |
         cd test
@@ -79,3 +79,47 @@ jobs:
             exit 1
         }
         Write-Host "All tests completed successfully"
+
+    - name: Install Powerbuilder Runtime 2019 and 2022
+      run: |
+      $msiPath = "${{ github.workspace }}\test\PBCLTRT 19.2.0.2728.msi"
+      Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
+      $msiPath = "${{ github.workspace }}\test\PBCLTRT 22.2.0.3397.msi"
+      Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
+        
+    - name: Run Integration Tests with Powerbuilder Runtime 2019
+      shell: pwsh
+      run: |
+        # Read and validate test results from ini file
+        $iniContent = Get-Content ".\test.ini" -Raw
+        $tests = @('test 1', 'test 2')
+        
+        foreach ($test in $tests) {
+            if ($iniContent -match "\[$test\]([^\[]*)" -eq $false) {
+                Write-Error "Test section [$test] not found in test.ini"
+                exit 1
+            }
+            
+            $section = $Matches[1]
+            if ($section -match 'Error=(.*)') {
+                Write-Error "Test [$test] failed with error: $($Matches[1])"
+                exit 1
+            }
+            
+            if ($section -match 'Result=(.*)') {
+                $result = $Matches[1].Trim()
+                if ($result -ne 'SUCCESS: PDF converted successfully') {
+                    Write-Error "Test [$test] failed with unexpected result: $result"
+                    exit 1
+                }
+                Write-Host "Test [$test] passed successfully"
+            } else {
+                Write-Error "Test [$test] has no Result entry"
+                exit 1
+            }
+        }
+        
+        Write-Host "All Powerbuilder tests completed successfully"
+
+        
+        
