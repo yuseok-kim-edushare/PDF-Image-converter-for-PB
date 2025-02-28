@@ -92,8 +92,22 @@ jobs:
       run: |
         $inputPath = "${{ github.workspace }}\test\test.pdf"
         $outputPath = "${{ github.workspace }}\test\output.png"
-        $PBruntimePath = "C:\Program Files (x86)\Appeon\Common\PowerBuilder\Runtime 19.2.0.2728"
-        cd test
+        $PBruntimeVersion = "19.2.0.2728"
+        # Define the registry path
+        $registryPath = "HKLM:\SOFTWARE\Wow6432Node\Sybase\PowerBuilder Runtime"
+        
+        # Get the installed PowerBuilder versions
+        $installedVersions = Get-ChildItem -Path $registryPath
+
+        # Loop through the installed versions and get the installed path
+        foreach ($version in $installedVersions) {
+            $versionPath = $version.PSPath
+            $installedPath = Get-ItemProperty -Path $versionPath -Name "Location"
+            if ($version.PSChildName -eq $PBruntimeVersion) {
+                $PBruntimePath = $installedPath.Location
+            }
+        }
+
         Move-Item -Path .\PB2019R3\test.exe -Destination .\ -Force
         Move-Item -Path .\PB2019R3\test.ini -Destination .\ -Force
         Move-Item -Path .\PB2019R3\test.pbd -Destination .\ -Force
