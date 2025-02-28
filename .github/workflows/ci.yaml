@@ -92,10 +92,12 @@ jobs:
       run: |
         $inputPath = "${{ github.workspace }}\test\test.pdf"
         $outputPath = "${{ github.workspace }}\test\output.png"
+        $PBruntimePath = "C:\Program Files (x86)\Appeon\Common\PowerBuilder\Runtime 19.2.0.2728"
         cd test
         Move-Item -Path .\PB2019R3\test.exe -Destination .\ -Force
         Move-Item -Path .\PB2019R3\test.ini -Destination .\ -Force
         Move-Item -Path .\PB2019R3\test.pbd -Destination .\ -Force
+        Copy-Item -Path .\test.ini -Destination $PBruntimePath\test.ini -Force
         
         # Debug information
         Write-Host "Running test.exe with arguments: '$inputPath' '$outputPath'"
@@ -104,13 +106,13 @@ jobs:
         & ".\test.exe" "$inputPath" "$outputPath"
         
         # Check if test.ini exists
-        if (-not (Test-Path ".\test.ini")) {
+        if (-not (Test-Path "$PBruntimePath\test.ini")) {
             Write-Error "test.ini file not found after test execution"
             exit 1
         }
         
         # Read and validate test results from ini file
-        $iniContent = Get-Content ".\test.ini" -Raw
+        $iniContent = Get-Content "$PBruntimePath\test.ini" -Raw
         Write-Host "INI Content: $iniContent"
         $tests = @('test 1', 'test 2')
         
