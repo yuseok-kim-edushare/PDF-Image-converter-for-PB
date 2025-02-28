@@ -100,8 +100,8 @@ jobs:
         # Debug information
         Write-Host "Running test.exe with arguments: '$inputPath' '$outputPath'"
         
-        # Use Start-Process to better handle arguments with spaces
-        Start-Process -FilePath ".\test.exe" -ArgumentList "`"$inputPath`"", "`"$outputPath`"" -NoNewWindow -Wait
+        # Run the executable with quoted arguments
+        & ".\test.exe" "$inputPath" "$outputPath"
         
         # Check if test.ini exists
         if (-not (Test-Path ".\test.ini")) {
