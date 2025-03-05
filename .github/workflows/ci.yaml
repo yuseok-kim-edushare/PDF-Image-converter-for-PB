@@ -83,8 +83,8 @@ jobs:
     - name: Run Integration Tests with Powerbuilder Runtime 2019
       shell: pwsh
       run: |
-        $inputPath = "${{ github.workspace }}\test\test.pdf"
-        $outputPath = "${{ github.workspace }}\test\output.png"
+        $inputPath = "test.pdf"
+        $outputPath = "output.png"
         cd test
         
         Move-Item -Path .\PB2019R3\* -Destination .\ -Force
@@ -96,7 +96,7 @@ jobs:
         & ".\test.exe" "$inputPath" "$outputPath"
                 
         # Read and validate test results from ini file
-        $iniContent = Get-Content "test.ini" -Raw
+        $iniContent = Get-Content test.ini -Raw
         Write-Host "INI Content: $iniContent"
         $tests = @('test 1', 'test 2')
         
