@@ -46,7 +46,7 @@ Write-Host "Running test.exe with arguments: '$filePaths'"
 
 # Run the executable with quoted arguments
 try {
-    Start-Process -FilePath .\test.exe -ArgumentList $filePaths -Wait
+    Start-Process -FilePath .\test.exe -ArgumentList $filePaths
     $processExitCode = $LASTEXITCODE
     Write-Host "test.exe exit code: $processExitCode"
 } catch {
