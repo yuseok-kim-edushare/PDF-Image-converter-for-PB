@@ -87,19 +87,48 @@ jobs:
         $outputPath = "output.png"
         cd test
         
+        # Show current directory for debugging
+        Write-Host "Current directory: $(Get-Location)"
+
+        # List files before moving
+        Write-Host "Files in PB2019R3 before moving:"
+        Get-ChildItem -Path .\PB2019R3\* | ForEach-Object { Write-Host "  $_" }
+
         Move-Item -Path .\PB2019R3\* -Destination .\ -Force
-        
+
+        # List files after moving to verify
+        Write-Host "Files in current directory after moving:"
+        Get-ChildItem -Path .\ | ForEach-Object { Write-Host "  $_" }
+
         # Debug information
         Write-Host "Running test.exe with arguments: '$inputPath' '$outputPath'"
-        
+
         # Run the executable with quoted arguments
         & ".\test.exe" "$inputPath" "$outputPath"
-                
-        # Read and validate test results from ini file
-        $iniContent = Get-Content test.ini -Raw
-        Write-Host "INI Content: $iniContent"
+
+        # Check if test.exe execution was successful
+        Write-Host "test.exe exit code: $LASTEXITCODE"
+
+        # Check if test.ini exists
+        if (Test-Path -Path .\test.ini) {
+            Write-Host "test.ini file exists"
+            $iniContent = Get-Content .\test.ini -Raw
+            Write-Host "INI Content: $iniContent"
+        } else {
+            Write-Host "test.ini file does not exist"
+            # Search for test.ini in other locations
+            $foundFiles = Get-ChildItem -Path .\ -Recurse -Filter "test.ini"
+            if ($foundFiles.Count -gt 0) {
+                Write-Host "Found test.ini files in other locations:"
+                $foundFiles | ForEach-Object { Write-Host "  $($_.FullName)" }
+            } else {
+                Write-Host "No test.ini files found in any subdirectory"
+            }
+            exit 1
+        }
+
         $tests = @('test 1', 'test 2')
-        
+
         foreach ($test in $tests) {
             if ($iniContent -match "\[$test\]([^\[]*)") {
                 $section = $Matches[1]
