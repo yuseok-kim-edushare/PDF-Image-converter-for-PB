@@ -83,97 +83,12 @@ jobs:
     - name: Run Integration Tests with Powerbuilder Runtime 2019
       shell: pwsh
       run: |
-        $filePaths = "test.pdf test.png"
         cd test
-
-        #remove previous test result artifacts
-        Remove-Item -Path .\*.png -Force
+        # Call the PowerShell script with default parameters
+        ./run_pb_tests.ps1
         
-        # Show current directory for debugging
-        Write-Host "Current directory: $(Get-Location)"
-
-        # List files before moving
-        Write-Host "Files in PB2019R3 before moving:"
-        Get-ChildItem -Path .\PB2019R3\* | ForEach-Object { Write-Host "  $_" }
-
-        Move-Item -Path .\PB2019R3\* -Destination .\ -Force
-
-        # List files after moving to verify
-        Write-Host "Files in current directory after moving:"
-        Get-ChildItem -Path .\ | ForEach-Object { Write-Host "  $_" }
-
-        # Debug information
-        Write-Host "Running test.exe with arguments: '$filePaths'"
-
-        # Run the executable with quoted arguments
-        Start-Process -FilePath .\test.exe -ArgumentList $filePaths
-
-        # Check if test.exe execution was successful
-        Write-Host "test.exe exit code: $LASTEXITCODE"
-        if ($LASTEXITCODE -eq $null) {
-          # Add a small delay to ensure file operations are complete
-          Start-Sleep -Seconds 10
-          Write-Host "Checking for test.ini file after delay..."
-        }        
-
-        # Check for test.ini file details
-        if (Test-Path -Path .\test.ini) {
-            $fileInfo = Get-Item .\test.ini
-            Write-Host "test.ini file exists - Size: $($fileInfo.Length) bytes, Last modified: $($fileInfo.LastWriteTime)"
-            
-            # Try different ways to read the file content
-            try {
-                $iniContent = Get-Content .\test.ini -Raw -ErrorAction Stop
-                Write-Host "INI Content (Get-Content): $iniContent"
-            } catch {
-                Write-Host "Error reading with Get-Content: $_"
-            }
-            
-            try {
-                $iniContent2 = [System.IO.File]::ReadAllText((Resolve-Path .\test.ini))
-                Write-Host "INI Content ([System.IO.File]::ReadAllText): $iniContent2"
-            } catch {
-                Write-Host "Error reading with [System.IO.File]::ReadAllText: $_"
-            }
-        } else {
-            Write-Host "test.ini file does not exist"
-            # Search for test.ini in other locations
-            $foundFiles = Get-ChildItem -Path .\ -Recurse -Filter "test.ini"
-            if ($foundFiles.Count -gt 0) {
-                Write-Host "Found test.ini files in other locations:"
-                $foundFiles | ForEach-Object { Write-Host "  $($_.FullName)" }
-            } else {
-                Write-Host "No test.ini files found in any subdirectory"
-            }
+        # Check the exit code from the script
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "PowerBuilder tests failed with exit code: $LASTEXITCODE"
             exit 1
         }
-
-        $tests = @('test 1', 'test 2')
-
-        foreach ($test in $tests) {
-            if ($iniContent -match "\[$test\]([^\[]*)") {
-                $section = $Matches[1]
-                
-                if ($section -match 'Error=(.*)') {
-                    Write-Error "Test [$test] failed with error: $($Matches[1])"
-                    exit 1
-                }
-                
-                if ($section -match 'Result=(.*)') {
-                    $result = $Matches[1].Trim()
-                    if ($result -ne 'SUCCESS: PDF converted successfully') {
-                        Write-Error "Test [$test] failed with unexpected result: $result"
-                        exit 1
-                    }
-                    Write-Host "Test [$test] passed successfully"
-                } else {
-                    Write-Error "Test [$test] has no Result entry"
-                    exit 1
-                }
-            } else {
-                Write-Error "Test section [$test] not found in test.ini"
-                exit 1
-            }
-        }
-        
-        Write-Host "All Powerbuilder tests completed successfully"
