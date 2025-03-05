@@ -79,54 +79,23 @@ jobs:
             exit 1
         }
         Write-Host "All tests completed successfully"
-
-    - name: Install Powerbuilder Runtime 2019 and 2022
-      run: |
-        $msiPath = "${{ github.workspace }}\test\PBCLTRT 19.2.0.2728.msi"
-        Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
-        $msiPath = "${{ github.workspace }}\test\PBCLTRT 22.2.0.3397.msi"
-        Start-Process msiexec.exe -ArgumentList "/i `"$msiPath`" /quiet" -Wait
-        
+   
     - name: Run Integration Tests with Powerbuilder Runtime 2019
       shell: pwsh
       run: |
         $inputPath = "${{ github.workspace }}\test\test.pdf"
         $outputPath = "${{ github.workspace }}\test\output.png"
-        $PBruntimeVersion = "19.2.0.2728"
-        # Define the registry path
-        $registryPath = "HKLM:\SOFTWARE\Wow6432Node\Sybase\PowerBuilder Runtime"
         
-        # Get the installed PowerBuilder versions
-        $installedVersions = Get-ChildItem -Path $registryPath
-
-        # Loop through the installed versions and get the installed path
-        foreach ($version in $installedVersions) {
-            $versionPath = $version.PSPath
-            $installedPath = Get-ItemProperty -Path $versionPath -Name "Location"
-            if ($version.PSChildName -eq $PBruntimeVersion) {
-                $PBruntimePath = $installedPath.Location
-            }
-        }
-
-        Move-Item -Path .\PB2019R3\test.exe -Destination .\ -Force
-        Move-Item -Path .\PB2019R3\test.ini -Destination .\ -Force
-        Move-Item -Path .\PB2019R3\test.pbd -Destination .\ -Force
-        Copy-Item -Path .\test.ini -Destination $PBruntimePath\test.ini -Force
+        Move-Item -Path .\PB2019R3\* -Destination .\ -Force
         
         # Debug information
         Write-Host "Running test.exe with arguments: '$inputPath' '$outputPath'"
         
         # Run the executable with quoted arguments
         & ".\test.exe" "$inputPath" "$outputPath"
-        
-        # Check if test.ini exists
-        if (-not (Test-Path "$PBruntimePath\test.ini")) {
-            Write-Error "test.ini file not found after test execution"
-            exit 1
-        }
-        
+                
         # Read and validate test results from ini file
-        $iniContent = Get-Content "$PBruntimePath\test.ini" -Raw
+        $iniContent = Get-Content "test.ini" -Raw
         Write-Host "INI Content: $iniContent"
         $tests = @('test 1', 'test 2')
         
