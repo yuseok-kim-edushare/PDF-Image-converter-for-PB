@@ -132,22 +132,6 @@ jobs:
             } catch {
                 Write-Host "Error reading with [System.IO.File]::ReadAllText: $_"
             }
-            
-            # Check if the file is empty
-            if ([string]::IsNullOrWhiteSpace($iniContent)) {
-                Write-Host "test.ini file is empty. Creating test.ini with sample content for testing..."
-                
-                # Create a sample test.ini file with expected content
-                $sampleContent = @"
-                [test 1]
-                Result=SUCCESS: PDF converted successfully   
-                [test 2]
-                Result=SUCCESS: PDF converted successfully   
-                "@
-                Set-Content -Path .\test.ini -Value $sampleContent
-                $iniContent = Get-Content .\test.ini -Raw
-                Write-Host "Created sample INI Content: $iniContent"
-            }
         } else {
             Write-Host "test.ini file does not exist"
             # Search for test.ini in other locations
