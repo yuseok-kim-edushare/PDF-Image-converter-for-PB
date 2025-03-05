@@ -86,6 +86,9 @@ jobs:
         $inputPath = "test.pdf"
         $outputPath = "output.png"
         cd test
+
+        #remove previous test result artifacts
+        Remove-Item -Path .\*.png -Force
         
         # Show current directory for debugging
         Write-Host "Current directory: $(Get-Location)"
@@ -104,7 +107,7 @@ jobs:
         Write-Host "Running test.exe with arguments: '$inputPath' '$outputPath'"
 
         # Run the executable with quoted arguments
-        & ".\test.exe" "$inputPath" "$outputPath"
+        Start-Process -FilePath ".\test.exe" -ArgumentList "$inputPath $outputPath" -Wait
 
         # Check if test.exe execution was successful
         Write-Host "test.exe exit code: $LASTEXITCODE"
