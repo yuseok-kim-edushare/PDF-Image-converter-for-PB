@@ -85,6 +85,7 @@ jobs:
       run: |
         $inputPath = "${{ github.workspace }}\test\test.pdf"
         $outputPath = "${{ github.workspace }}\test\output.png"
+        cd test
         
         Move-Item -Path .\PB2019R3\* -Destination .\ -Force
         
