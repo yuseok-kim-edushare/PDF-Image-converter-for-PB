@@ -13,6 +13,82 @@ param(
 $ErrorActionPreference = "Stop"
 $filePaths = "$InputPdfPath $OutputPngPath"
 
+# Kill any running instances of the test
+Get-Process | Where-Object {$_.ProcessName -like "*PdfToImageConverter*" -or $_.ProcessName -like "*RegAsm*"} | Stop-Process -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 2
+
+# Clean up existing files
+Remove-Item -Path ".\*" -Include "*.dll","*.pdb","*.xml" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path ".\de" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item -Path ".\runtimes" -Recurse -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 1
+
+# Define source and destination paths
+$sourceDir = "..\bin\Debug\net481\win-x86"
+$destDir = "."
+
+Write-Host "`nCopying build artifacts from: $sourceDir"
+Write-Host "To: $destDir"
+
+# Function to copy files with detailed logging
+function Copy-WithLogging {
+    param (
+        [string]$source,
+        [string]$destination,
+        [string]$filter = "*"
+    )
+    
+    Write-Host "Copying from $source to $destination"
+    if (!(Test-Path $source)) {
+        Write-Host "Source path does not exist: $source" -ForegroundColor Red
+        return $false
+    }
+    
+    try {
+        if (!(Test-Path $destination)) {
+            New-Item -ItemType Directory -Path $destination -Force | Out-Null
+            Write-Host "Created directory: $destination"
+        }
+        
+        Copy-Item -Path "$source\*" -Destination $destination -Recurse -Force
+        Write-Host "Successfully copied files from $source" -ForegroundColor Green
+        
+        # Copy x86 native DLLs to root
+        if (Test-Path "$destination\x86") {
+            Write-Host "Copying x86 native DLLs to root..."
+            Copy-Item -Path "$destination\x86\*.dll" -Destination $destination -Force
+            Write-Host "Copied x86 native DLLs"
+        }
+        
+        # List all copied files
+        Write-Host "`nFiles in destination:"
+        Get-ChildItem -Path $destination -Filter "*.dll" | ForEach-Object {
+            Write-Host $_.FullName
+        }
+        return $true
+    } catch {
+        Write-Host "Error copying files: $_" -ForegroundColor Red
+        return $false
+    }
+}
+
+# Copy all build artifacts
+$copySuccess = Copy-WithLogging -source $sourceDir -destination $destDir
+
+if (!$copySuccess) {
+    Write-Host "Failed to copy build artifacts. Aborting test." -ForegroundColor Red
+    exit 1
+}
+
+# Clean up platform-specific directories
+Write-Host "`nCleaning up platform directories..."
+@("arm", "arm64", "musl-arm64", "musl-x64", "musl-x86", "win-x86", "x64", "x86") | ForEach-Object {
+    if (Test-Path $_) {
+        Remove-Item -Path $_ -Recurse -Force
+        Write-Host "Removed $_"
+    }
+}
+
 # Remove previous test result artifacts
 Write-Host "Removing previous PNG files..."
 Remove-Item -Path .\*.png -Force -ErrorAction SilentlyContinue

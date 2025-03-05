@@ -67,19 +67,6 @@ jobs:
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
 
-    - name: Run Integration Tests with COM object and PowerShell
-      shell: pwsh
-      run: |
-        cd test
-        $output = .\test_converter.ps1 *>&1
-        $output | ForEach-Object { Write-Host $_ }
-        
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Tests failed with exit code: $LASTEXITCODE"
-            exit 1
-        }
-        Write-Host "All tests completed successfully"
-   
     - name: Run Integration Tests with Powerbuilder Runtime 2019
       shell: pwsh
       run: |
@@ -92,3 +79,18 @@ jobs:
             Write-Error "PowerBuilder tests failed with exit code: $LASTEXITCODE"
             exit 1
         }
+        Write-Host "All Powerbuilder tests completed successfully"
+
+    - name: Run Integration Tests with COM object and PowerShell
+      shell: pwsh
+      run: |
+        cd test
+        $output = .\test_converter.ps1 *>&1
+        $output | ForEach-Object { Write-Host $_ }
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Tests failed with exit code: $LASTEXITCODE"
+            exit 1
+        }
+        Write-Host "All COM tests completed successfully"
+   
