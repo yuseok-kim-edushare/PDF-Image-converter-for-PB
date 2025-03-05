@@ -183,26 +183,8 @@ if (Test-Path -Path .\test.ini) {
 
 # Check for empty INI content
 if ([string]::IsNullOrWhiteSpace($iniContent)) {
-    Write-Host "test.ini file exists but is empty or could not be read correctly"
-    
-    # In CI environment, create a sample test.ini with expected content
-    if ($env:GITHUB_ACTIONS -eq "true") {
-        Write-Host "Running in GitHub Actions, creating sample test.ini content for testing..."
-        
-        # Create a sample test.ini file with expected content
-        $sampleContent = @"
-[test 1]
-Result=SUCCESS: PDF converted successfully   
-[test 2]
-Result=SUCCESS: PDF converted successfully   
-"@
-        Set-Content -Path .\test.ini -Value $sampleContent
-        $iniContent = Get-Content .\test.ini -Raw
-        Write-Host "Created sample INI Content: $iniContent"
-    } else {
-        Write-Error "test.ini file exists but is empty or could not be read correctly"
+    Write-Error "test.ini file exists but is empty or could not be read correctly"
         exit 1
-    }
 }
 
 # Validate test results
