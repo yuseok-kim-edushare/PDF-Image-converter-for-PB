@@ -83,8 +83,7 @@ jobs:
     - name: Run Integration Tests with Powerbuilder Runtime 2019
       shell: pwsh
       run: |
-        $inputPath = "test.pdf"
-        $outputPath = "output.png"
+        $filePaths = "test.pdf test.png"
         cd test
 
         #remove previous test result artifacts
@@ -104,10 +103,10 @@ jobs:
         Get-ChildItem -Path .\ | ForEach-Object { Write-Host "  $_" }
 
         # Debug information
-        Write-Host "Running test.exe with arguments: '$inputPath' '$outputPath'"
+        Write-Host "Running test.exe with arguments: '$filePaths'"
 
         # Run the executable with quoted arguments
-        Start-Process -FilePath ".\test.exe" -ArgumentList "$inputPath $outputPath" -Wait
+        Start-Process -FilePath .\test.exe -ArgumentList $filePaths -Wait
 
         # Check if test.exe execution was successful
         Write-Host "test.exe exit code: $LASTEXITCODE"
