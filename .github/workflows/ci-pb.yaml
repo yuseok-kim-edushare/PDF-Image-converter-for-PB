@@ -1,15 +1,27 @@
 name: CI tests about Powerbuilder
 
 on:
+  # Keep the workflow_run trigger for CI tests completion
   workflow_run:
     workflows: ["CI tests"]
     types: [completed]
     branches: [ "main" ]
     pull_requests: true
+  
+  # Add direct pull_request trigger with filtering for Dependabot
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
 
 jobs:
   build:
     runs-on: pb-tester
+    # This condition runs this job only on Dependabot PRs or when using the workflow_run trigger
+    if: |
+      (github.event_name == 'pull_request' && github.actor == 'dependabot[bot]') || 
+      github.event_name == 'workflow_run'
 
     steps:
     - name: Checkout code
@@ -33,7 +45,6 @@ jobs:
 
     - name: Install ILRepack and merge DLLs
       run: |
-        dotnet tool install -g dotnet-ilrepack
         $buildPath = "${{ github.workspace }}\bin\Debug\net481\win-x86"
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
         ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
