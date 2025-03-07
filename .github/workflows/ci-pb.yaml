@@ -2,14 +2,14 @@ name: CI tests about Powerbuilder
 
 on:
   workflow_run:
-    workflows: ["CI tests "]
+    workflows: ["CI tests"]
     types:
       - completed
     branches: [ "main" ]
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: pb-tester
 
     steps:
     - name: Checkout code
