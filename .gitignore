@@ -68,6 +68,3 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk 
-
-# nuget exe for without vs enviroment
-nuget.exe
