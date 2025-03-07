@@ -78,7 +78,6 @@ jobs:
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
 
     - name: Run Integration Tests with Powerbuilder Runtime 2019
-      shell: pwsh
       run: |
         # Set parameters
         $InputPdfPath = "test.pdf"
