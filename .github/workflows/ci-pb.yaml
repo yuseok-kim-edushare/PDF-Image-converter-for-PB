@@ -14,7 +14,7 @@ jobs:
     steps:
     - name: Set PowerShell Execution Policy
       run: |
-        Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+        Set-ExecutionPolicy Bypass -Scope Process -Force
       shell: pwsh
 
     - name: Checkout code
