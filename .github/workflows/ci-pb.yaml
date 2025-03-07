@@ -25,21 +25,18 @@ jobs:
      
     - name: Restore NuGet packages
       run: |
-        nuget restore PdfToImageConverter.csproj -ConfigFile nuget.config
+        dotnet restore PdfToImageConverter.csproj
 
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
-    
     - name: Build solution for testing
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
 
     - name: Install ILRepack and merge DLLs
       run: |
-        nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages
+        dotnet tool install -g dotnet-ilrepack
         $buildPath = "${{ github.workspace }}\bin\Debug\net481\win-x86"
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
-        ${{ github.workspace }}\packages\ILRepack.2.0.40\tools\ILRepack.exe /out:"$buildPath\merged\PdfToImageConverter.dll" `
+        ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
                 /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
