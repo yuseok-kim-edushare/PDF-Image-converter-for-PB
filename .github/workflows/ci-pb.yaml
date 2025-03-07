@@ -3,11 +3,9 @@ name: CI tests about Powerbuilder
 on:
   workflow_run:
     workflows: ["CI tests"]
-    types:
-      - completed
+    types: [completed]
     branches: [ "main" ]
-    types: [requested, completed]
-    pull_requests: [true]
+    pull_requests: true
 
 jobs:
   build:
