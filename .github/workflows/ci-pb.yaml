@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: pb-tester
+    runs-on: self-hosted
 
     steps:
     - name: Checkout code
