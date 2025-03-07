@@ -43,7 +43,11 @@ jobs:
 
     - name: Install ILRepack
       run: |
-        nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages
+        try {
+            nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages
+        } catch {
+            Write-Host "Error installing ILRepack: $_" -ForegroundColor Red
+        }
 
     - name: Prepare Release Files
       shell: pwsh
