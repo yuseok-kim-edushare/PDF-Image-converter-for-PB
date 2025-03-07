@@ -75,7 +75,11 @@ jobs:
                 "$buildPath\System.Buffers.dll" `
                 "$buildPath\System.Memory.dll" `
                 "$buildPath\System.Numerics.Vectors.dll" `
-                "$buildPath\System.Runtime.CompilerServices.Unsafe.dll"
+                "$buildPath\System.Runtime.CompilerServices.Unsafe.dll" `
+                "$buildPath\Microsoft.Bcl.AsyncInterfaces" `
+                "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions" `
+                "$buildPath\System.Diagnostics.DiagnosticSource" `  
+                "$buildPath\System.Threading.Tasks.Extensions"
 
             # Delete unnecessary files
             $filesToDelete = @(
