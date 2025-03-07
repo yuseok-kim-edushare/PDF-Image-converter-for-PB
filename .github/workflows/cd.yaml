@@ -1,7 +1,7 @@
 name: Continuous Deployment
 on:
   workflow_run:
-    workflows: ["CI tests"]
+    workflows: ["CI tests about Powerbuilder"]
     types:
       - completed
     branches: [ "main" ]
@@ -43,7 +43,7 @@ jobs:
 
     - name: Install ILRepack
       run: |
-        nuget install ILRepack -Version 2.0.18 -OutputDirectory ${{ github.workspace }}\packages
+        nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages
 
     - name: Prepare Release Files
       shell: pwsh
@@ -61,7 +61,7 @@ jobs:
             Write-Host "Copied native dlls from $buildPath to $releaseDir"
 
             # Merge NET 4.8.1 DLLs (using ILRepack)
-            ${{ github.workspace }}\packages\ILRepack.2.0.18\tools\ILRepack.exe /out:"$releaseDir\PdfToImageConverter.dll" `
+            ${{ github.workspace }}\packages\ILRepack.2.0.40\tools\ILRepack.exe /out:"$releaseDir\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
                 /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
