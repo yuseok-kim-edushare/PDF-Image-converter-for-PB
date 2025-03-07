@@ -80,10 +80,10 @@ jobs:
                 "$buildPath\System.Memory.dll" `
                 "$buildPath\System.Numerics.Vectors.dll" `
                 "$buildPath\System.Runtime.CompilerServices.Unsafe.dll" `
-                "$buildPath\Microsoft.Bcl.AsyncInterfaces" `
-                "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions" `
-                "$buildPath\System.Diagnostics.DiagnosticSource" `  
-                "$buildPath\System.Threading.Tasks.Extensions"
+                "$buildPath\Microsoft.Bcl.AsyncInterfaces.dll" `
+                "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll" `
+                "$buildPath\System.Diagnostics.DiagnosticSource.dll" `  
+                "$buildPath\System.Threading.Tasks.Extensions.dll"
 
             # Delete unnecessary files
             $filesToDelete = @(
