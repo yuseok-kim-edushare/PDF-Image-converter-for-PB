@@ -43,10 +43,12 @@ jobs:
 
     - name: Install ILRepack
       run: |
-        try {
+        # Install ILRepack with error handling for already installed scenario
+        nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages -NonInteractive -ErrorAction SilentlyContinue
+        
+        # Continue even if the above command fails (package exists)
+        if (-not (Test-Path "${{ github.workspace }}\packages\ILRepack\tools\ILRepack.exe")) {
             nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages
-        } catch {
-            Write-Host "Error installing ILRepack: $_" -ForegroundColor Red
         }
 
     - name: Prepare Release Files
