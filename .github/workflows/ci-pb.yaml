@@ -398,15 +398,6 @@ jobs:
             exit 1
         }
 
-        # Clean up platform-specific directories
-        Write-Host "`nCleaning up platform directories..."
-        @("arm", "arm64", "musl-arm64", "musl-x64", "musl-x86", "win-x86", "x64", "x86") | ForEach-Object {
-            if (Test-Path $_) {
-                Remove-Item -Path $_ -Recurse -Force
-                Write-Host "Removed $_"
-            }
-        }
-
         # Remove previous test result artifacts
         Write-Host "Removing previous PNG files..."
         Remove-Item -Path .\*.png -Force -ErrorAction SilentlyContinue
