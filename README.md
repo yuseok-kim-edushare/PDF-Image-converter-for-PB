@@ -1,6 +1,7 @@
 # PDF to Image Converter .NET Library For PowerBuilder
 
 This is a .NET library that converts PDF files to PNG images while maintaining the original PDF dimensions. The library is specifically designed to be used with PowerBuilder applications.
+but other COM or anyway to invoke .NET(C#) DLL invoking way can works
 
 [![CI tests](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml)
 [![CI tests with Powerbuilder(local)](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci-pb.yaml)
