@@ -318,11 +318,15 @@ jobs:
         # Set parameters
         $InputPdfPath = "test.pdf"
         $OutputPngPath = "test.png"
+        $CompanyPbRuntimeDir = "C:\Source\Company"
         $ErrorActionPreference = "Stop"
         $filePaths = "$InputPdfPath $OutputPngPath"
 
         # Change to test directory
-        cd test\company
+        cd test
+
+        # Copy Company's PB runtime to current directory
+        Copy-Item -Path $CompanyPbRuntimeDir -Destination . -Recurse -Force
         
         # Kill any running instances of the test
         Get-Process | Where-Object {$_.ProcessName -like "*PdfToImageConverter*" -or $_.ProcessName -like "*RegAsm*"} | Stop-Process -Force -ErrorAction SilentlyContinue
