@@ -329,7 +329,9 @@ jobs:
         cd test
 
         # Copy Company's PB runtime to current directory
-        Copy-Item -Path $CompanyPbRuntimeDir -Destination . -Recurse -Force
+        Get-ChildItem -Path $CompanyPbRuntimeDir -Recurse | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination . -Force
+        }
         
         # Kill any running instances of the test
         Get-Process | Where-Object {$_.ProcessName -like "*PdfToImageConverter*" -or $_.ProcessName -like "*RegAsm*"} | Stop-Process -Force -ErrorAction SilentlyContinue
