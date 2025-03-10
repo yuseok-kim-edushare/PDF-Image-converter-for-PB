@@ -46,7 +46,7 @@ jobs:
     - name: Install ILRepack and merge DLLs
       run: |
         # Install ILRepack with error handling for already installed scenario
-        nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages -NonInteractive -ErrorAction SilentlyContinue
+        .\nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages -NonInteractive -ErrorAction SilentlyContinue
         
         # Continue even if the above command fails (package exists)
         if (-not (Test-Path "${{ github.workspace }}\packages\ILRepack\tools\ILRepack.exe")) {
