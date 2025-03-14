@@ -252,6 +252,7 @@ jobs:
                 $dpi = 300
                 $totalPagesNumber = 2  # Our test.pdf has 2 pages
                 $pageNames = [string[]]@("Apple", "Banana")
+                $pagePaths = [string[]]@("alpha", "beta")
 
                 # Display test configuration
                 Write-Host "`nTest Configuration:"
@@ -279,6 +280,12 @@ jobs:
                     Write-Host "`n=== Running Test 2: PDF to Image Conversion with Page Names ==="
                     Write-Host "Starting conversion..."
                     $result = $converter.ConvertPdfToImageWithPageNames($pdfPath, $outputBasePath, $dpi, $totalPagesNumber, $pageNames)
+                    Write-Host "Conversion result: $result"
+
+                    # Test 3: PDF to Image conversion with page names and output paths
+                    Write-Host "`n=== Running Test 3: PDF to Image Conversion with Page Names and Output Paths ==="
+                    Write-Host "Starting conversion..."
+                    $result = $converter.ConvertPdfToImageWithPageNamesAndOutputPaths($pdfPath, $pagePaths, $dpi, $totalPagesNumber, $pageNames)
                     Write-Host "Conversion result: $result"
 
                     # If we get here, tests passed
