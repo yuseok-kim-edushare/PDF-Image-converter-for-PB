@@ -77,7 +77,7 @@ but other COM or anyway to invoke .NET(C#) DLL invoking way can works
    ls_page_names[2] = "Banana"
    ls_output_paths[1] = "C:\output\folder1"
    ls_output_paths[2] = "C:\output\folder2"
-   ls_result = lnvo_pdfconverter.of_ConvertPdfToImageWithPageNamesAndOutputPaths("C:\input.pdf", ls_output_paths, 300, 2, ls_page_names)
+   ls_result = lnvo_pdfconverter.of_ConvertPdfToImageWithPageNamesAndOutputPaths("C:\input.pdf", "C:\output.png", 300, 2, ls_page_names, ls_output_paths)
    ```
 
 ## Parameters
@@ -91,7 +91,7 @@ for `ConvertPdfToImageWithPageNames` method required some additional parameters:
 - `pageNames`: Array of page names for the output images
 
 for `ConvertPdfToImageWithPageNamesAndOutputPaths` method required these parameters:
-- `outputPaths`: Array of output directory paths for each page
+- `outputPaths`: Array of output directory names for each page
 - `totalPagesNumber`: Total number of pages in the PDF
 - `pageNames`: Array of page names for the output images
 

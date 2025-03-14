@@ -23,7 +23,7 @@ namespace PdfToImageConverter
 
         [ComVisible(true)]
         [DispId(3)]
-        string ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string[] outputPaths, int dpi, int totalPagesNumber, string[] pageNames);
+        string ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string outputPath, int dpi, int totalPagesNumber, string[] pageNames, string[] pagePaths);
     }
 
     [ComVisible(true)]
@@ -394,56 +394,52 @@ namespace PdfToImageConverter
 
         [ComVisible(true)]
         [DispId(3)]
-        public string ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string[] outputPaths, int dpi, int totalPagesNumber, string[] pageNames)
+        public string ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string outputPath, int dpi, int totalPagesNumber, string[] pageNames, string[] pagePaths)
         {
             try
             {
                 string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
                 File.AppendAllText(logPath, $"\n\nStarting conversion at {DateTime.Now}\n");
                 File.AppendAllText(logPath, $"PDF Path: {pdfPath}\n");
-                File.AppendAllText(logPath, $"Output Paths: {string.Join(", ", outputPaths)}\n");
+                File.AppendAllText(logPath, $"Output Path: {outputPath}\n");
                 File.AppendAllText(logPath, $"DPI: {dpi}\n");
                 File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
                 File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
+                File.AppendAllText(logPath, $"Page Paths: {string.Join(", ", pagePaths)}\n");
 
-                // Sanitize all page names
-                for (int i = 0; i < pageNames.Length; i++)
+                // Use common validation method
+                byte[] pdfBytes;
+                string validationError = ValidateAndLoadPdf(pdfPath, outputPath, dpi, out pdfBytes);
+                if (validationError != null)
                 {
-                    pageNames[i] = SanitizeFileName(pageNames[i]);
+                    return validationError;
                 }
 
                 // Validate outputPaths
-                if (outputPaths == null || outputPaths.Length == 0)
+                if (pagePaths == null || pagePaths.Length == 0)
                 {
                     return "Error: Output paths array is empty";
                 }
-                if (outputPaths.Length < totalPagesNumber)
+                if (pagePaths.Length < totalPagesNumber)
                 {
-                    return $"Error: Output paths array length ({outputPaths.Length}) is less than total pages ({totalPagesNumber})";
+                    return $"Error: Output paths array length ({pagePaths.Length}) is less than total pages ({totalPagesNumber})";
                 }
-                foreach (var path in outputPaths)
+                foreach (var path in pagePaths)
                 {
-                    if (!ValidateFilePath(path))
+                    string combinedPath = Path.Combine(outputPath, path);
+                    if (!ValidateFilePath(combinedPath))
                     {
-                        return $"Error: Invalid output path format: {path}";
+                        return $"Error: Invalid output path format: {combinedPath}";
                     }
                     // ensure output directory exists
                     try
                     {
-                        EnsureDirectoryExists(path);
+                        EnsureDirectoryExists(combinedPath);
                     }
                     catch (Exception ex)
                     {
-                        return $"Error: Failed to create output directory for {path}: {ex.Message}";
+                        return $"Error: Failed to create output directory for {combinedPath}: {ex.Message}";
                     }
-                }
-
-                // Use common validation method
-                byte[] pdfBytes;
-                string validationError = ValidateAndLoadPdf(pdfPath, outputPaths[0], dpi, out pdfBytes);
-                if (validationError != null)
-                {
-                    return validationError;
                 }
 
                 // Validate page names and total pages
@@ -461,6 +457,11 @@ namespace PdfToImageConverter
                 {
                     return $"Error: Page names array length ({pageNames.Length}) is less than total pages ({totalPagesNumber})";
                 }
+                // Sanitize all page names
+                for (int i = 0; i < pageNames.Length; i++)
+                {
+                    pageNames[i] = SanitizeFileName(pageNames[i]);
+                }
 
                 var options = CreateRenderOptions(dpi);
 
@@ -469,14 +470,17 @@ namespace PdfToImageConverter
                 {
                     try
                     {
-                        // create combined output path
-                        string pageOutputPath = GetPageOutputPathForPageName(outputPaths[pageNumber], pageNames[pageNumber]);
+                        // Combine the base directory with the individual page path
+                        string pageOutputPath = 
+                            Path.Combine(Path.GetDirectoryName(outputPath),
+                                         pagePaths[pageNumber],
+                                          pageNames[pageNumber]+".png");
                         // save png
                         PDFtoImage.Conversion.SavePng(pageOutputPath, pdfBytes, null, pageNumber, options);
                     }
                     catch (Exception ex)
                     {
-                        return $"Error processing page {pageNumber} ({pageNames[pageNumber]}) to {outputPaths[pageNumber]}: {ex.Message}";
+                        return $"Error processing page {pageNumber} ({pageNames[pageNumber]}) to {pagePaths[pageNumber]}: {ex.Message}";
                     }
                 }
 
