@@ -470,11 +470,20 @@ namespace PdfToImageConverter
                 {
                     try
                     {
-                        // Combine the base directory with the individual page path
-                        string pageOutputPath = 
-                            Path.Combine(Path.GetDirectoryName(outputPath),
-                                         pagePaths[pageNumber],
-                                          pageNames[pageNumber]+".png");
+                        // Combine the base directory with the individual page path and filename
+                        string fullOutputDir = Path.Combine(Path.GetDirectoryName(outputPath), pagePaths[pageNumber]);                     
+                        string pageOutputPath = Path.Combine(fullOutputDir, pageNames[pageNumber] + ".png");
+                        
+                        // ensure output directory exists
+                        try
+                        {
+                            EnsureDirectoryExists(fullOutputDir);
+                        }
+                        catch (Exception ex)
+                        {
+                            return $"Error: Failed to create output directory for {fullOutputDir}: {ex.Message}";
+                        }
+                        
                         // save png
                         PDFtoImage.Conversion.SavePng(pageOutputPath, pdfBytes, null, pageNumber, options);
                     }
