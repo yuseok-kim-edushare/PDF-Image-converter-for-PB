@@ -20,6 +20,10 @@ namespace PdfToImageConverter
         [ComVisible(true)]
         [DispId(2)]
         string ConvertPdfToImageWithPageNames(string pdfPath, string outputPath, int dpi, int totalPagesNumber, string[] pageNames);
+
+        [ComVisible(true)]
+        [DispId(3)]
+        string ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string[] outputPaths, int dpi, int totalPagesNumber, string[] pageNames);
     }
 
     [ComVisible(true)]
@@ -354,6 +358,99 @@ namespace PdfToImageConverter
             {
                 string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
                 File.AppendAllText(logPath, $"\nError in ConvertPdfToImageWithPageNames: {ex.GetType().Name} - {ex.Message}\n");
+                File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");    
+                return $"Error: {ex.GetType().Name} - {ex.Message} - Location: {ex.StackTrace}";
+            }
+        }
+
+        [ComVisible(true)]
+        [DispId(3)]
+        public string ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string[] outputPaths, int dpi, int totalPagesNumber, string[] pageNames)
+        {
+            try
+            {
+                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                File.AppendAllText(logPath, $"\n\nStarting conversion at {DateTime.Now}\n");
+                File.AppendAllText(logPath, $"PDF Path: {pdfPath}\n");
+                File.AppendAllText(logPath, $"Output Paths: {string.Join(", ", outputPaths)}\n");
+                File.AppendAllText(logPath, $"DPI: {dpi}\n");
+                File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
+                File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
+
+                // Validate outputPaths
+                if (outputPaths == null || outputPaths.Length == 0)
+                {
+                    return "Error: Output paths array is empty";
+                }
+                if (outputPaths.Length < totalPagesNumber)
+                {
+                    return $"Error: Output paths array length ({outputPaths.Length}) is less than total pages ({totalPagesNumber})";
+                }
+                foreach (var path in outputPaths)
+                {
+                    if (!ValidateFilePath(path))
+                    {
+                        return $"Error: Invalid output path format: {path}";
+                    }
+                    // ensure output directory exists
+                    try
+                    {
+                        EnsureDirectoryExists(path);
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"Error: Failed to create output directory for {path}: {ex.Message}";
+                    }
+                }
+
+                // Use common validation method
+                byte[] pdfBytes;
+                string validationError = ValidateAndLoadPdf(pdfPath, outputPaths[0], dpi, out pdfBytes);
+                if (validationError != null)
+                {
+                    return validationError;
+                }
+
+                // Validate page names and total pages
+                if (pageNames == null || pageNames.Length == 0)
+                {
+                    return "Error: Page names array is empty";
+                }
+
+                if (pageNames.Any(name => string.IsNullOrEmpty(name)))
+                {
+                    return "Error: Page names array contains empty strings";
+                }
+
+                if (pageNames.Length < totalPagesNumber)
+                {
+                    return $"Error: Page names array length ({pageNames.Length}) is less than total pages ({totalPagesNumber})";
+                }
+
+                var options = CreateRenderOptions(dpi);
+
+                // Process all pages using their specific output paths
+                for (int pageNumber = 0; pageNumber < totalPagesNumber; pageNumber++)
+                {
+                    try
+                    {
+                        // create combined output path
+                        string combinedOutputPath = Path.Combine(outputPaths[pageNumber], pageNames[pageNumber]);
+                        // save png
+                        PDFtoImage.Conversion.SavePng(combinedOutputPath, pdfBytes, null, pageNumber, options);
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"Error processing page {pageNumber} ({pageNames[pageNumber]}) to {outputPaths[pageNumber]}: {ex.Message}";
+                    }
+                }
+
+                return "SUCCESS: PDF converted successfully";
+            }
+            catch (Exception ex)
+            {
+                string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                File.AppendAllText(logPath, $"\nError in ConvertPdfToImageWithPageNamesAndOutputPaths: {ex.GetType().Name} - {ex.Message}\n");
                 File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");    
                 return $"Error: {ex.GetType().Name} - {ex.Message} - Location: {ex.StackTrace}";
             }
