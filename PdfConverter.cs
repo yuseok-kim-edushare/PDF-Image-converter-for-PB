@@ -470,9 +470,9 @@ namespace PdfToImageConverter
                     try
                     {
                         // create combined output path
-                        string combinedOutputPath = Path.Combine(outputPaths[pageNumber], pageNames[pageNumber]);
+                        string pageOutputPath = GetPageOutputPathForPageName(outputPaths[pageNumber], pageNames[pageNumber]);
                         // save png
-                        PDFtoImage.Conversion.SavePng(combinedOutputPath, pdfBytes, null, pageNumber, options);
+                        PDFtoImage.Conversion.SavePng(pageOutputPath, pdfBytes, null, pageNumber, options);
                     }
                     catch (Exception ex)
                     {
