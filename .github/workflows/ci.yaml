@@ -252,7 +252,9 @@ jobs:
                 $dpi = 300
                 $totalPagesNumber = 2  # Our test.pdf has 2 pages
                 $pageNames = [string[]]@("Apple", "Banana")
-                $pagePaths = [string[]]@("alpha", "beta")
+                $pagePath1 = Join-Path (Get-Location) "alpha"
+                $pagePath2 = Join-Path (Get-Location) "beta"
+                $pagePaths = [string[]]@($pagePath1, $pagePath2)
 
                 # Display test configuration
                 Write-Host "`nTest Configuration:"

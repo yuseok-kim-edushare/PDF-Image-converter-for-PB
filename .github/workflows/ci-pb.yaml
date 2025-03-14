@@ -500,7 +500,7 @@ jobs:
         }
 
         # Validate test results
-        $tests = @('test 1', 'test 2')
+        $tests = @('test 1', 'test 2', 'test 3')
         $allTestsPassed = $true
 
         foreach ($test in $tests) {

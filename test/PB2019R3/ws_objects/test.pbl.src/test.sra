@@ -118,8 +118,8 @@ END TRY
 // Third test - with page names and with output paths
 TRY
     string ls_output_paths[]
-    ls_output_paths[1] = "alpha"
-    ls_output_paths[2] = "beta"
+    ls_output_paths[1] = "C:\temp\alpha"
+    ls_output_paths[2] = "C:\temp\beta"
     ls_result = lnvo_pdfconverter.of_ConvertPdfToImageWithPagenamesAndOutputPaths(ls_input, ls_output_paths, 300, 2, ls_pagenames)
 	 SetProfileString ( ls_log, "test 3", "Result", ls_result )
    // messagebox("test 2", ls_result)
