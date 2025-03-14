@@ -49,7 +49,7 @@ public subroutine of_geterrorhandler (ref powerobject apo_currenthandler,ref str
 public subroutine of_reseterrorhandler ()
 public function string of_convertpdftoimage(string as_pdfpath,string as_outputpath,long al_dpi)
 public function string of_convertpdftoimagewithpagenames(string as_pdfpath,string as_outputpath,long al_dpi,long al_totalpagesnumber,string as_pagenames[])
-public function string of_convertpdftoimagewithpagenamesandoutputpaths(string as_pdfpath,string as_outputpaths[],long al_dpi,long al_totalpagesnumber,string as_pagenames[])
+public function string of_convertpdftoimagewithpagenamesandoutputpaths(string as_pdfpath,string as_outputpath,long al_dpi,long al_totalpagesnumber,string as_pagenames[],string as_pagepaths[])
 end prototypes
 
 event ue_error ( );
@@ -306,15 +306,16 @@ Catch(runtimeerror re_error)
 End Try
 end function
 
-public function string of_convertpdftoimagewithpagenamesandoutputpaths(string as_pdfpath,string as_outputpaths[],long al_dpi,long al_totalpagesnumber,string as_pagenames[]);
+public function string of_convertpdftoimagewithpagenamesandoutputpaths(string as_pdfpath,string as_outputpath,long al_dpi,long al_totalpagesnumber,string as_pagenames[],string as_pagepaths[]);
 //*-----------------------------------------------------------------*/
 //*  .NET function : ConvertPdfToImageWithPageNamesAndOutputPaths
 //*   Argument:
 //*              String as_pdfpath
-//*              String as_outputpaths[]
+//*              String as_outputpath
 //*              Long al_dpi
 //*              Long al_totalpagesnumber
 //*              String as_pagenames[]
+//*              String as_pagepaths[]
 //*   Return : String
 //*-----------------------------------------------------------------*/
 /* .NET  function name */
@@ -332,7 +333,7 @@ Try
 	End If
 
 	/* Trigger the dotnet function */
-	ls_result = This.convertpdftoimagewithpagenamesandoutputpaths(as_pdfpath,as_outputpaths,al_dpi,al_totalpagesnumber,as_pagenames)
+	ls_result = This.convertpdftoimagewithpagenamesandoutputpaths(as_pdfpath,as_outputpath,al_dpi,al_totalpagesnumber,as_pagenames,as_pagepaths)
 	Return ls_result
 Catch(runtimeerror re_error)
 

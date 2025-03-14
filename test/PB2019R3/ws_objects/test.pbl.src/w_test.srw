@@ -123,5 +123,17 @@ TRY
 CATCH (RuntimeError rte2)
     MessageBox("Error in test 2", "Error: " + String(rte2.Number) + " - " + rte2.Text)
 END TRY
+
+// Third test - with page names and with output paths
+TRY
+    string ls_output_paths[]
+    ls_output_paths[1] = "output1"  
+    ls_output_paths[2] = "output2"
+    
+    ls_result = lnvo_pdfconverter.of_ConvertPdfToImageWithPageNamesAndOutputPaths( sle_1.text, sle_2.text, 300, 2, ls_pagenames, ls_output_paths)
+	messagebox("test 3", ls_result)  // Fixed test number in comment
+CATCH (RuntimeError rte3)
+    MessageBox("Error in test 3", "Error: " + String(rte3.Number) + " - " + rte3.Text)  // Fixed test number in comment
+END TRY
 end event
 

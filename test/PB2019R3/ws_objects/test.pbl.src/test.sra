@@ -118,16 +118,10 @@ END TRY
 // Third test - with page names and with output paths
 TRY
     string ls_output_paths[]
-    // Use directories that are more likely to be accessible in CI environment
-    // Use proper path escaping with double backslashes
-    ls_output_paths[1] = ".\\output1"  // Use relative paths that should be accessible
-    ls_output_paths[2] = ".\\output2"
+    ls_output_paths[1] = "output1"  
+    ls_output_paths[2] = "output2"
     
-    // Create output directories if they don't exist
-    CreateDirectory(ls_output_paths[1])
-    CreateDirectory(ls_output_paths[2])
-    
-    ls_result = lnvo_pdfconverter.of_ConvertPdfToImageWithPagenamesAndOutputPaths(ls_input, ls_output_paths, 300, 2, ls_pagenames)
+    ls_result = lnvo_pdfconverter.of_ConvertPdfToImageWithPageNamesAndOutputPaths(ls_input, ls_output, 300, 2, ls_pagenames, ls_output_paths)
     SetProfileString ( ls_log, "test 3", "Result", ls_result )
     // messagebox("test 3", ls_result)  // Fixed test number in comment
 CATCH (RuntimeError rte3)
