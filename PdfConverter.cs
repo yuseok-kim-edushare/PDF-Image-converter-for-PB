@@ -426,7 +426,7 @@ namespace PdfToImageConverter
                 }
                 foreach (var path in pagePaths)
                 {
-                    string combinedPath = Path.Combine(outputPath, path);
+                    string combinedPath = Path.Combine(Path.GetDirectoryName(outputPath), path);
                     if (!ValidateFilePath(combinedPath))
                     {
                         return $"Error: Invalid output path format: {combinedPath}";
