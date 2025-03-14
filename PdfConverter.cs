@@ -135,6 +135,26 @@ namespace PdfToImageConverter
             }
         }
 
+        /// <summary>
+        /// Sanitizes a filename by removing invalid characters
+        /// </summary>
+        private string SanitizeFileName(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return fileName;
+
+            // Get invalid filename characters from the system
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            
+            // Replace each invalid character with an underscore
+            foreach (char c in invalidChars)
+            {
+                fileName = fileName.Replace(c, '_');
+            }
+            
+            return fileName;
+        }
+
         private string GetPageOutputPath(string outputPath, int pageNumber, int pageCount)
         {
             if (pageCount > 1)
@@ -146,11 +166,14 @@ namespace PdfToImageConverter
             }
             return outputPath;
         }
+        
         private string GetPageOutputPathForPageName(string outputPath, string pageName)
         {
             string extension = Path.GetExtension(outputPath);
             string directory = Path.GetDirectoryName(outputPath);
-            return Path.Combine(directory, $"{pageName}{extension}");
+            // Sanitize the page name to ensure it doesn't contain invalid filename characters
+            string sanitizedPageName = SanitizeFileName(pageName);
+            return Path.Combine(directory, $"{sanitizedPageName}{extension}");
         }
 
         private RenderOptions CreateRenderOptions(int dpi)
@@ -304,6 +327,12 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
                 File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
 
+                // Sanitize all page names
+                for (int i = 0; i < pageNames.Length; i++)
+                {
+                    pageNames[i] = SanitizeFileName(pageNames[i]);
+                }
+
                 // Use common validation method first
                 byte[] pdfBytes;
                 string validationError = ValidateAndLoadPdf(pdfPath, outputPath, dpi, out pdfBytes);
@@ -376,6 +405,12 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"DPI: {dpi}\n");
                 File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
                 File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
+
+                // Sanitize all page names
+                for (int i = 0; i < pageNames.Length; i++)
+                {
+                    pageNames[i] = SanitizeFileName(pageNames[i]);
+                }
 
                 // Validate outputPaths
                 if (outputPaths == null || outputPaths.Length == 0)
