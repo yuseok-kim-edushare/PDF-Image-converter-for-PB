@@ -85,6 +85,16 @@ jobs:
         Remove-Item -Path $buildPath\System.Numerics.Vectors.dll -Force
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
+        # Ensure the output directory exists
+        cd test
+        $outputDir = ".\output1"
+        if (!(Test-Path -Path $outputDir)) {
+            New-Item -ItemType Directory -Path $outputDir
+            Write-Host "Created directory: $outputDir"}
+        $outputDir =".\output2"
+        if (!(Test-Path -Path $outputDir)) {
+            New-Item -ItemType Directory -Path $outputDir
+            Write-Host "Created directory: $outputDir"}
 
     - name: Run Integration Tests with Powerbuilder Runtime 2019
       run: |
