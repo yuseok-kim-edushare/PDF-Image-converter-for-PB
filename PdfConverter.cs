@@ -1,3 +1,6 @@
+#pragma warning disable CA1416 // Validate platform compatibility
+#pragma warning disable CS0618 // Obsolete member is used
+
 using System;
 using System.Threading.Tasks;
 using System.Linq;
@@ -270,10 +273,9 @@ namespace PdfToImageConverter
                 try
                 {
                     string firstPageOutput = GetPageOutputPath(outputPath, 0, pageCount);
-                    using (var ms = new MemoryStream(pdfBytes))
-                    {
-                        PDFtoImage.Conversion.SavePng(firstPageOutput, ms, 0, options: options);
-                    }
+                    
+                    // Use deprecated method with int parameter for .NET Framework 4.8.1 compatibility
+                    PDFtoImage.Conversion.SavePng(firstPageOutput, pdfBytes, null, 0, options);
                 }
                 catch (Exception ex)
                 {
@@ -290,10 +292,9 @@ namespace PdfToImageConverter
                         try
                         {
                             string pageOutput = GetPageOutputPath(outputPath, pageNumber, pageCount);
-                            using (var ms = new MemoryStream(pdfBytes))
-                            {
-                                PDFtoImage.Conversion.SavePng(pageOutput, ms, pageNumber, options: options);
-                            }
+                            
+                            // Use deprecated method with int parameter for .NET Framework 4.8.1 compatibility
+                            PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
                         }
                         catch (Exception ex)
                         {
@@ -372,17 +373,14 @@ namespace PdfToImageConverter
                 }
 
                 var options = CreateRenderOptions(dpi);
-
+                
                 // Process all pages using their page names
                 for (int pageNumber = 0; pageNumber < totalPagesNumber; pageNumber++)
                 {
                     try
                     {
                         string pageOutput = GetPageOutputPathForPageName(outputPath, pageNames[pageNumber]);
-                        using (var ms = new MemoryStream(pdfBytes))
-                        {
-                            PDFtoImage.Conversion.SavePng(pageOutput, ms, pageNumber, options: options);
-                        }
+                        PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
                     }
                     catch (Exception ex)
                     {
@@ -473,7 +471,7 @@ namespace PdfToImageConverter
                 }
 
                 var options = CreateRenderOptions(dpi);
-
+                
                 // Process all pages using their specific output paths
                 for (int pageNumber = 0; pageNumber < totalPagesNumber; pageNumber++)
                 {
@@ -493,11 +491,8 @@ namespace PdfToImageConverter
                             return $"Error: Failed to create output directory for {fullOutputDir}: {ex.Message}";
                         }
                         
-                        // save png
-                        using (var ms = new MemoryStream(pdfBytes))
-                        {
-                            PDFtoImage.Conversion.SavePng(pageOutputPath, ms, pageNumber, options: options);
-                        }
+                        // save png using the non-deprecated approach
+                        PDFtoImage.Conversion.SavePng(pageOutputPath, pdfBytes, null, pageNumber, options);
                     }
                     catch (Exception ex)
                     {
