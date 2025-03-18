@@ -270,7 +270,10 @@ namespace PdfToImageConverter
                 try
                 {
                     string firstPageOutput = GetPageOutputPath(outputPath, 0, pageCount);
-                    PDFtoImage.Conversion.SavePng(firstPageOutput, pdfBytes, null, 0, options);
+                    using (var ms = new MemoryStream(pdfBytes))
+                    {
+                        PDFtoImage.Conversion.SavePng(firstPageOutput, ms, 0, options: options);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -287,7 +290,10 @@ namespace PdfToImageConverter
                         try
                         {
                             string pageOutput = GetPageOutputPath(outputPath, pageNumber, pageCount);
-                            PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
+                            using (var ms = new MemoryStream(pdfBytes))
+                            {
+                                PDFtoImage.Conversion.SavePng(pageOutput, ms, pageNumber, options: options);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -373,7 +379,10 @@ namespace PdfToImageConverter
                     try
                     {
                         string pageOutput = GetPageOutputPathForPageName(outputPath, pageNames[pageNumber]);
-                        PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
+                        using (var ms = new MemoryStream(pdfBytes))
+                        {
+                            PDFtoImage.Conversion.SavePng(pageOutput, ms, pageNumber, options: options);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -485,7 +494,10 @@ namespace PdfToImageConverter
                         }
                         
                         // save png
-                        PDFtoImage.Conversion.SavePng(pageOutputPath, pdfBytes, null, pageNumber, options);
+                        using (var ms = new MemoryStream(pdfBytes))
+                        {
+                            PDFtoImage.Conversion.SavePng(pageOutputPath, ms, pageNumber, options: options);
+                        }
                     }
                     catch (Exception ex)
                     {
