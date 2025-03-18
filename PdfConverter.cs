@@ -120,7 +120,21 @@ namespace PdfToImageConverter
             string directory = Path.GetDirectoryName(filePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
-                Directory.CreateDirectory(directory);
+                try
+                {
+                    // Create directory with recursive option to ensure all parent directories are created
+                    Directory.CreateDirectory(directory);
+                    
+                    // Debug logging
+                    string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                    File.AppendAllText(logPath, $"Created directory: {directory}\n");
+                }
+                catch (Exception ex)
+                {
+                    string logPath = Path.Combine(Path.GetTempPath(), "PdfConverter_Debug.log");
+                    File.AppendAllText(logPath, $"Error creating directory {directory}: {ex.Message}\n");
+                    throw; // Rethrow to be caught by the caller
+                }
             }
         }
 
@@ -433,18 +447,27 @@ namespace PdfToImageConverter
                 }
                 foreach (var path in pagePaths)
                 {
-                    string combinedPath = Path.Combine(Path.GetDirectoryName(outputPath), path);
+                    string baseOutputDir = Path.GetDirectoryName(outputPath);
+                    string combinedPath = Path.Combine(baseOutputDir, path);
+                    
                     if (!ValidateFilePath(combinedPath))
                     {
                         return $"Error: Invalid output path format: {combinedPath}";
                     }
-                    // ensure output directory exists
+                    
+                    // Log directories being created
+                    File.AppendAllText(logPath, $"Attempting to create directory: {combinedPath}\n");
+                    
+                    // ensure output directory exists (not just the path)
                     try
                     {
-                        EnsureDirectoryExists(combinedPath);
+                        // Create full directory structure
+                        Directory.CreateDirectory(combinedPath);
+                        File.AppendAllText(logPath, $"Successfully created directory: {combinedPath}\n");
                     }
                     catch (Exception ex)
                     {
+                        File.AppendAllText(logPath, $"Failed to create directory {combinedPath}: {ex.Message}\n");
                         return $"Error: Failed to create output directory for {combinedPath}: {ex.Message}";
                     }
                 }
@@ -478,17 +501,25 @@ namespace PdfToImageConverter
                     try
                     {
                         // Combine the base directory with the individual page path and filename
-                        string fullOutputDir = Path.Combine(Path.GetDirectoryName(outputPath), pagePaths[pageNumber]);                     
+                        string baseOutputDir = Path.GetDirectoryName(outputPath);
+                        string fullOutputDir = Path.Combine(baseOutputDir, pagePaths[pageNumber]);
                         string pageOutputPath = Path.Combine(fullOutputDir, pageNames[pageNumber] + ".png");
                         
-                        // ensure output directory exists
-                        try
+                        File.AppendAllText(logPath, $"Processing page {pageNumber}: Output path: {pageOutputPath}\n");
+                        
+                        // Create the directory structure recursively - this time directly using Directory.CreateDirectory
+                        if (!Directory.Exists(fullOutputDir))
                         {
-                            EnsureDirectoryExists(fullOutputDir);
-                        }
-                        catch (Exception ex)
-                        {
-                            return $"Error: Failed to create output directory for {fullOutputDir}: {ex.Message}";
+                            try
+                            {
+                                Directory.CreateDirectory(fullOutputDir);
+                                File.AppendAllText(logPath, $"Created directory: {fullOutputDir}\n");
+                            }
+                            catch (Exception dirEx)
+                            {
+                                File.AppendAllText(logPath, $"Error creating directory {fullOutputDir}: {dirEx.Message}\n");
+                                return $"Error creating directory for page {pageNumber} ({pageNames[pageNumber]}): {dirEx.Message}";
+                            }
                         }
                         
                         // save png using the non-deprecated approach
@@ -496,6 +527,7 @@ namespace PdfToImageConverter
                     }
                     catch (Exception ex)
                     {
+                        File.AppendAllText(logPath, $"Error processing page {pageNumber}: {ex.Message}\n");
                         return $"Error processing page {pageNumber} ({pageNames[pageNumber]}) to {pagePaths[pageNumber]}: {ex.Message}";
                     }
                 }
