@@ -1,5 +1,5 @@
 #pragma warning disable CA1416 // Validate platform compatibility
-#pragma warning disable CS0618 // Obsolete member is used
+// #pragma warning disable CS0618 // Obsolete member is used
 
 using System;
 using System.Threading.Tasks;
@@ -288,8 +288,8 @@ namespace PdfToImageConverter
                 {
                     string firstPageOutput = GetPageOutputPath(outputPath, 0, pageCount);
                     
-                    // Use deprecated method with int parameter for .NET Framework 4.8.1 compatibility
-                    PDFtoImage.Conversion.SavePng(firstPageOutput, pdfBytes, null, 0, options);
+                    // align with the new method signature. this can support .NET 4.8.1 with PolySharp dependency(this included on PDFtoImage.csproj)
+                    PDFtoImage.Conversion.SavePng(firstPageOutput, pdfBytes, new System.Index(0), null, options);
                 }
                 catch (Exception ex)
                 {
@@ -307,8 +307,8 @@ namespace PdfToImageConverter
                         {
                             string pageOutput = GetPageOutputPath(outputPath, pageNumber, pageCount);
                             
-                            // Use deprecated method with int parameter for .NET Framework 4.8.1 compatibility
-                            PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
+                            // align with the new method signature. this can support .NET 4.8.1 with PolySharp dependency(this included on PDFtoImage.csproj)
+                            PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, new System.Index(pageNumber), null, options);
                         }
                         catch (Exception ex)
                         {
@@ -394,7 +394,8 @@ namespace PdfToImageConverter
                     try
                     {
                         string pageOutput = GetPageOutputPathForPageName(outputPath, pageNames[pageNumber]);
-                        PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, null, pageNumber, options);
+                        // align with the new method signature. this can support .NET 4.8.1 with PolySharp dependency(this included on PDFtoImage.csproj)
+                        PDFtoImage.Conversion.SavePng(pageOutput, pdfBytes, new System.Index(pageNumber), null, options);
                     }
                     catch (Exception ex)
                     {
@@ -522,8 +523,8 @@ namespace PdfToImageConverter
                             }
                         }
                         
-                        // save png using the non-deprecated approach
-                        PDFtoImage.Conversion.SavePng(pageOutputPath, pdfBytes, null, pageNumber, options);
+                        // align with the new method signature. this can support .NET 4.8.1 with PolySharp dependency(this included on PDFtoImage.csproj)
+                        PDFtoImage.Conversion.SavePng(pageOutputPath, pdfBytes, new System.Index(pageNumber), null, options);
                     }
                     catch (Exception ex)
                     {

@@ -9,10 +9,14 @@
     <AssemblyOriginatorKeyFile>PdfToImageConverter.snk</AssemblyOriginatorKeyFile>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DelaySign>true</DelaySign>
+    <LangVersion>13.0</LangVersion>
+    <!--
+    13.0 is for net9.0
+    -->
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PDFtoImage" Version="5.0.0" />
+    <PackageReference Include="PDFtoImage" Version="5.1.0-preview5" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net481'">
