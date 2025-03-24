@@ -84,6 +84,10 @@ jobs:
         Remove-Item -Path $buildPath\System.Memory.dll -Force
         Remove-Item -Path $buildPath\System.Numerics.Vectors.dll -Force
         Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force
+        Remove-Item -Path $buildPath\Microsoft.Bcl.AsyncInterfaces.dll -Force
+        Remove-Item -Path $buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll -Force
+        Remove-Item -Path $buildPath\System.Diagnostics.DiagnosticSource.dll -Force
+        Remove-Item -Path $buildPath\System.Threading.Tasks.Extensions.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
         # # Ensure the output directory exists
         # cd test
