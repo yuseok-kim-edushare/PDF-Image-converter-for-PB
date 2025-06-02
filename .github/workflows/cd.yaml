@@ -14,9 +14,6 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: windows-2022
-    env:
-      BUILD_CONFIG: Release
-      NET_VERSION: net481
 
     steps:
     - name: Checkout code
@@ -39,7 +36,9 @@ jobs:
     
     - name: Build solution for release
       run: |
-        dotnet build PdfToImageConverter.csproj --configuration ${{ env.BUILD_CONFIG }} --no-restore -f net481
+        dotnet build PdfToImageConverter.csproj --configuration Release --no-restore -f net481
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net80
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net80-maccatalyst
 
     - name: Install ILRepack
       run: |
@@ -53,19 +52,22 @@ jobs:
       shell: pwsh
       run: |
         # Define paths
-        $buildPath = "${{ github.workspace }}\bin\${{ env.BUILD_CONFIG }}\${{ env.NET_VERSION }}\win-x86"
+        $buildPath = "${{ github.workspace }}\bin\Release\net481\win-x86"
         $releaseDir = "${{ github.workspace }}\release-files"
         
         # Create release directory
         New-Item -Path $releaseDir -ItemType Directory -Force
-        
+        New-Item -Path $releaseDir\net481 -ItemType Directory -Force
+        New-Item -Path $releaseDir\net80 -ItemType Directory -Force
+        New-Item -Path $releaseDir\net80-maccatalyst -ItemType Directory -Force
+
         # Copy all build artifacts recursively
         if (Test-Path $buildPath) {
-            Copy-Item -Path "$buildPath\x86\*" -Destination $releaseDir -Recurse -Force
+            Copy-Item -Path "$buildPath\x86\*" -Destination $releaseDir\net481 -Recurse -Force
             Write-Host "Copied native dlls from $buildPath to $releaseDir"
 
             # Merge NET 4.8.1 DLLs (using ILRepack)
-            ilrepack /out:"$releaseDir\PdfToImageConverter.dll" `
+            ilrepack /out:"$releaseDir\net481\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
                 /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
@@ -106,6 +108,30 @@ jobs:
             Write-Host "::error::Build output directory not found at: $buildPath"
             exit 1
         }
+
+        # merge and copy net8.0
+        $buildPath = "${{ github.workspace }}\bin\Release\net80\win-x86\publish"
+        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net80
+        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net80
+
+        ilrepack /out:"$releaseDir\net80\PdfToImageConverter-net80.dll" `
+            /lib:"$buildPath" `
+            /union `
+            /copyattrs `
+            /internalize `
+            /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
+            "$buildPath\PdfToImageConverter.dll" `
+            "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll" `
+            "$buildPath\Microsoft.Extensions.Logging.Abstractions.dll" `
+            "$buildPath\Microsoft.Win32.SystemEvents.dll" `
+            "$buildPath\PDFtoImage.dll" `
+            "$buildPath\SkiaSharp.dll" `
+            "$buildPath\System.Diagnostics.DiagnosticSource.dll" `
+            "$buildPath\System.Drawing.Common.dll" `
+            "$buildPath\System.Private.Windows.Core.dll"
+
+        # copy net8.0-maccatalyst
+        Copy-Item -Path "$buildPath\net80-maccatalyst\*" -Destination $releaseDir\net80-maccatalyst -Recurse -Force
         
         # Create ZIP archive
         Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
@@ -162,7 +188,9 @@ jobs:
       with:
         files: |
           ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
-          ${{ github.workspace }}\release-files\PdfToImageConverter.dll
+          ${{ github.workspace }}\release-files\net481\PdfToImageConverter.dll
+          ${{ github.workspace }}\release-files\net80\PdfToImageConverter.dll
+          ${{ github.workspace }}\release-files\net80-maccatalyst\PdfToImageConverter.dll
         tag_name: ${{ env.new_release }}
         name: Release ${{ env.new_release }}
         body: ${{ env.release_notes }}
