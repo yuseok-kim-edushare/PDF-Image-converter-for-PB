@@ -6,7 +6,6 @@ on:
     workflows: ["CI tests"]
     types: [completed]
     branches: [ "main" ]
-    pull_requests: true
   
   # Add direct pull_request trigger with filtering for Dependabot
   pull_request:
@@ -46,14 +45,14 @@ jobs:
     - name: Install ILRepack and merge DLLs
       run: |
         try {
-             .\nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages
+             dotnet tool install -g dotnet-ilrepack
          } catch {
              Write-Host "Error installing ILRepack: $_" -ForegroundColor Red
          }
         
         $buildPath = "${{ github.workspace }}\bin\Debug\net481\win-x86"
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
-        ${{ github.workspace }}\packages\ILRepack.2.0.40\tools\ILRepack.exe /out:"$buildPath\merged\PdfToImageConverter.dll" `
+        ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
                 /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `

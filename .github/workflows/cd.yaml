@@ -44,7 +44,7 @@ jobs:
     - name: Install ILRepack
       run: |
         try {
-             nuget install ILRepack -Version 2.0.40 -OutputDirectory ${{ github.workspace }}\packages
+             dotnet tool install -g dotnet-ilrepack
          } catch {
              Write-Host "Error installing ILRepack: $_" -ForegroundColor Red
          }
@@ -65,7 +65,7 @@ jobs:
             Write-Host "Copied native dlls from $buildPath to $releaseDir"
 
             # Merge NET 4.8.1 DLLs (using ILRepack)
-            ${{ github.workspace }}\packages\ILRepack.2.0.40\tools\ILRepack.exe /out:"$releaseDir\PdfToImageConverter.dll" `
+            ilrepack /out:"$releaseDir\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
                 /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
                 /union `
