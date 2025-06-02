@@ -38,8 +38,8 @@ jobs:
     - name: Build solution for testing
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
-        dotnet build PdfToImageConverter.csproj --configuration Debug -f net80
-        dotnet build PdfToImageConverter.csproj --configuration Debug -f net80-maccatalyst
+        dotnet build PdfToImageConverter.csproj --configuration Debug -f net8.0
+        dotnet build PdfToImageConverter.csproj --configuration Debug -f net8.0-maccatalyst
 
     - name: Install ILRepack and merge DLLs
       run: |
