@@ -41,6 +41,7 @@
   <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-maccatalyst'">
     <ComVisible>false</ComVisible>
     <RuntimeIdentifier>macos-arm64</RuntimeIdentifier>
+    <DelaySign>false</DelaySign>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-maccatalyst'">
