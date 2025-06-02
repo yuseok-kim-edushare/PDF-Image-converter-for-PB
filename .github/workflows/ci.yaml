@@ -38,8 +38,8 @@ jobs:
     - name: Build solution for testing
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
-        dotnet build PdfToImageConverter.csproj --configuration Debug -f net8.0
-        dotnet build PdfToImageConverter.csproj --configuration Debug -f net8.0-maccatalyst
+        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0
+        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0-maccatalyst
 
     - name: Install ILRepack and merge DLLs
       run: |
@@ -75,7 +75,6 @@ jobs:
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
         ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `
-                /targetplatform:"v8,C:\Program Files\dotnet\sdk\8.0.0\Runtime\win-x64" `
                 /union `
                 /copyattrs `
                 /internalize `
