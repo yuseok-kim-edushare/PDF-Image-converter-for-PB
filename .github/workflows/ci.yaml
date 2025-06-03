@@ -71,7 +71,7 @@ jobs:
                 "$buildPath\System.Diagnostics.DiagnosticSource.dll" `  
                 "$buildPath\System.Threading.Tasks.Extensions.dll"
 
-        $buildPath = "${{ github.workspace }}\bin\Debug\net80\win-x86\publish"
+        $buildPath = "${{ github.workspace }}\bin\Debug\net8.0\win-x86\publish"
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
         ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
                 /lib:"$buildPath" `

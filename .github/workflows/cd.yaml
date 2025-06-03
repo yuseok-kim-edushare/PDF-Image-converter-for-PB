@@ -110,9 +110,9 @@ jobs:
         }
 
         # merge and copy net8.0
-        $buildPath = "${{ github.workspace }}\bin\Release\net80\win-x86\publish"
-        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net80
-        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net80
+        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\win-x86\publish"
+        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net8.0
+        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net8.0
 
         ilrepack /out:"$releaseDir\net80\PdfToImageConverter-net80.dll" `
             /lib:"$buildPath" `
@@ -131,7 +131,7 @@ jobs:
             "$buildPath\System.Private.Windows.Core.dll"
 
         # copy net8.0-maccatalyst
-        Copy-Item -Path "$buildPath\net80-maccatalyst\*" -Destination $releaseDir\net80-maccatalyst -Recurse -Force
+        Copy-Item -Path "$buildPath\net8.0-maccatalyst\*" -Destination $releaseDir\net8.0-maccatalyst -Recurse -Force
         
         # Create ZIP archive
         Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
@@ -189,8 +189,8 @@ jobs:
         files: |
           ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
           ${{ github.workspace }}\release-files\net481\PdfToImageConverter.dll
-          ${{ github.workspace }}\release-files\net80\PdfToImageConverter.dll
-          ${{ github.workspace }}\release-files\net80-maccatalyst\PdfToImageConverter.dll
+          ${{ github.workspace }}\release-files\net8.0\PdfToImageConverter.dll
+          ${{ github.workspace }}\release-files\net8.0-maccatalyst\PdfToImageConverter.dll
         tag_name: ${{ env.new_release }}
         name: Release ${{ env.new_release }}
         body: ${{ env.release_notes }}
