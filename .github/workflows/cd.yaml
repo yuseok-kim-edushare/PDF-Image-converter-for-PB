@@ -37,8 +37,8 @@ jobs:
     - name: Build solution for release
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Release --no-restore -f net481
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net80
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net80-maccatalyst
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0-maccatalyst
 
     - name: Install ILRepack
       run: |
@@ -58,8 +58,8 @@ jobs:
         # Create release directory
         New-Item -Path $releaseDir -ItemType Directory -Force
         New-Item -Path $releaseDir\net481 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net80 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net80-maccatalyst -ItemType Directory -Force
+        New-Item -Path $releaseDir\net8.0 -ItemType Directory -Force
+        New-Item -Path $releaseDir\net8.0-maccatalyst -ItemType Directory -Force
 
         # Copy all build artifacts recursively
         if (Test-Path $buildPath) {
@@ -114,7 +114,7 @@ jobs:
         Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net8.0
         Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net8.0
 
-        ilrepack /out:"$releaseDir\net80\PdfToImageConverter-net80.dll" `
+        ilrepack /out:"$releaseDir\net8.0\PdfToImageConverter-net8.0.dll" `
             /lib:"$buildPath" `
             /union `
             /copyattrs `
