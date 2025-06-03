@@ -334,7 +334,7 @@ jobs:
         
         Write-Host "net481 dll's COM tests completed successfully"
 
-        $buildPath = "${{ github.workspace }}\bin\Debug\net80\win-x86\publish"
+        $buildPath = "${{ github.workspace }}\bin\Debug\net8.0\win-x86\publish"
         $TargetPath= "${{ github.workspace }}\bin\Debug\net481\win-x86"
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $TargetPath
 
