@@ -38,7 +38,7 @@ jobs:
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Release --no-restore -f net481
         dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0-maccatalyst
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net9.0-maccatalyst
 
     - name: Install ILRepack
       run: |
@@ -59,7 +59,7 @@ jobs:
         New-Item -Path $releaseDir -ItemType Directory -Force
         New-Item -Path $releaseDir\net481 -ItemType Directory -Force
         New-Item -Path $releaseDir\net8.0 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net8.0-maccatalyst -ItemType Directory -Force
+        New-Item -Path $releaseDir\net9.0-maccatalyst -ItemType Directory -Force
 
         # Copy all build artifacts recursively
         if (Test-Path $buildPath) {
@@ -130,8 +130,9 @@ jobs:
             "$buildPath\System.Drawing.Common.dll" `
             "$buildPath\System.Private.Windows.Core.dll"
 
-        # copy net8.0-maccatalyst
-        Copy-Item -Path "$buildPath\net8.0-maccatalyst\*" -Destination $releaseDir\net8.0-maccatalyst -Recurse -Force
+        # copy net9.0-maccatalyst
+        Rename-Item -Path "$buildPath\net9.0-maccatalyst\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net9.0-maccatalyst.dll"
+        Copy-Item -Path "$buildPath\net9.0-maccatalyst\*" -Destination $releaseDir\net9.0-maccatalyst -Recurse -Force
         
         # Create ZIP archive
         Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
@@ -189,8 +190,8 @@ jobs:
         files: |
           ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
           ${{ github.workspace }}\release-files\net481\PdfToImageConverter.dll
-          ${{ github.workspace }}\release-files\net8.0\PdfToImageConverter.dll
-          ${{ github.workspace }}\release-files\net8.0-maccatalyst\PdfToImageConverter.dll
+          ${{ github.workspace }}\release-files\net8.0\PdfToImageConverter-net8.0.dll
+          ${{ github.workspace }}\release-files\net9.0-maccatalyst\PdfToImageConverter-net9.0-maccatalyst.dll
         tag_name: ${{ env.new_release }}
         name: Release ${{ env.new_release }}
         body: ${{ env.release_notes }}

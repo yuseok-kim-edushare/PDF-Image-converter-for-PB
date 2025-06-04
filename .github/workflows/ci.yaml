@@ -39,7 +39,7 @@ jobs:
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
         dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0
-        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0-maccatalyst
+        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net9.0-maccatalyst
 
     - name: Install ILRepack and merge DLLs
       run: |
@@ -131,7 +131,7 @@ jobs:
                 Start-Sleep -Seconds 1
 
                 # Define source and destination paths
-                $sourceDir = "..\bin\Debug\net481\win-x86\publish"
+                $sourceDir = "..\bin\Debug\net481\win-x86"
                 $destDir = "."
 
                 Write-Host "`nCopying build artifacts from: $sourceDir"
