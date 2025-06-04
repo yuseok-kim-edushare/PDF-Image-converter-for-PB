@@ -130,8 +130,10 @@ jobs:
             "$buildPath\System.Drawing.Common.dll" `
             "$buildPath\System.Private.Windows.Core.dll"
 
-        # copy net8.0-maccatalyst
-        Copy-Item -Path "$buildPath\net8.0-maccatalyst\*" -Destination $releaseDir\net8.0-maccatalyst -Recurse -Force
+        # copy net9.0-maccatalyst
+        $buildPath = "${{ github.workspace }}\bin\Release\net9.0-maccatalyst\macos-arm64"
+        Rename-Item -Path "$buildPath\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net9.0-maccatalyst.dll"
+        Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net9.0-maccatalyst -Recurse -Force
         
         # Create ZIP archive
         Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
