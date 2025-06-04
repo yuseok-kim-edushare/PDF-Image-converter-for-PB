@@ -336,6 +336,7 @@ jobs:
 
         $buildPath = "${{ github.workspace }}\bin\Debug\net8.0\win-x86\publish"
         $TargetPath= "${{ github.workspace }}\bin\Debug\net481\win-x86"
+        Remove-Item -Path $TargetPath\PdfToImageConverter.dll -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $TargetPath
 
     - name: Run Integration Tests with COM object and PowerShell for net80
