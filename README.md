@@ -123,3 +123,85 @@ The conversion method returns a string starting with either "SUCCESS" or "ERROR"
 ## Acknowledgements
 
 - [PDFtoImage](https://github.com/sungaila/PDFtoImage) for the PDF conversion library
+
+
+Certainly! Here’s a COM-based usage example you can add to your README for users who want to use the PDF-Image Converter .NET DLL via COM (e.g., from VBScript, VBA, or other COM-aware environments).
+
+---
+
+## Usage via COM (VBScript Example)
+
+If you want to use the PDF-Image Converter library from a COM-based language (like VBScript, VBA, or classic ASP), make sure the DLL is registered as a COM-visible assembly.  
+You must register the DLL using regasm.exe and ensure all dependencies are available.
+
+### 1. Register the DLL for COM
+
+Open a command prompt as Administrator and run:
+```shell
+regasm PdfToImageConverter.dll /codebase
+```
+
+If you need to create a type library (.tlb):
+```shell
+regasm PdfToImageConverter.dll /codebase /tlb:PdfToImageConverter.tlb
+```
+> Note: On 64-bit Windows, use the 64-bit regasm.exe for 64-bit clients, and the 32-bit version for 32-bit clients.
+
+### 2. Example Usage in VBScript
+
+Create a file named convert_pdf.vbs with the following contents:
+```vbscript
+' Create the COM object
+Set converter = CreateObject("PdfToImageConverter.PdfConverter")
+
+' Convert a PDF to PNG
+pdfPath = "C:\input.pdf"
+outputPath = "C:\output.png"
+dpi = 300
+
+result = converter.ConvertPdfToImage(pdfPath, outputPath, dpi)
+
+If Left(result, 7) = "SUCCESS" Then
+    MsgBox "Success: " & result
+Else
+    MsgBox "Error: " & result
+End If
+```
+
+### 3. Example Usage in VBA (e.g., Excel Macro)
+
+```vba
+Sub ConvertPDF()
+    Dim converter As Object
+    Set converter = CreateObject("PdfToImageConverter.PdfConverter")
+    
+    Dim pdfPath As String
+    Dim outputPath As String
+    Dim dpi As Integer
+    Dim result As String
+
+    pdfPath = "C:\input.pdf"
+    outputPath = "C:\output.png"
+    dpi = 300
+
+    result = converter.ConvertPdfToImage(pdfPath, outputPath, dpi)
+
+    If Left(result, 7) = "SUCCESS" Then
+        MsgBox "Success: " & result
+    Else
+        MsgBox "Error: " & result
+    End If
+End Sub
+```
+
+### 4. Notes
+
+- The ProgID/class name (`PdfToImageConverter.PdfConverter`) may differ depending on your assembly’s namespace and class.  
+  Check your DLL's exposed class name or use OLE/COM Object Viewer to confirm.
+- You must ensure the assembly is registered as COM visible and all dependencies are present.
+- For advanced functions (like page names or custom output paths), you may need to pass arrays.  
+  COM clients like VBScript may not support passing arrays easily—consider using PowerBuilder or .NET clients for those features.
+
+---
+
+Would you like a sample for another COM-capable language or more details on DLL registration?
