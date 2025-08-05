@@ -58,6 +58,10 @@ jobs:
   windows-com-test:
     runs-on: windows-2022
 
+  # Windows-specific COM testing for .NET Framework 4.8.1
+  windows-com-test:
+    runs-on: windows-2022
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -86,6 +90,9 @@ jobs:
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
         dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0 -r win-x64
+        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0 -r linux-x64
+        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0 -r osx-x64
+        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0 -r osx-arm64
 
     - name: Install ILRepack and merge DLLs
       run: |
@@ -116,6 +123,25 @@ jobs:
                 "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll" `
                 "$buildPath\System.Diagnostics.DiagnosticSource.dll" `  
                 "$buildPath\System.Threading.Tasks.Extensions.dll"
+
+        $buildPath = "${{ github.workspace }}\bin\Debug\net8.0\win-x64\publish"
+        New-Item -Path "$buildPath\merged" -ItemType Directory -Force
+        ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
+                /lib:"$buildPath" `
+                /union `
+                /copyattrs `
+                /internalize `
+                /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
+                "$buildPath\PdfToImageConverter.dll" `
+                "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll" `
+                "$buildPath\Microsoft.Extensions.Logging.Abstractions.dll" `
+                "$buildPath\Microsoft.Win32.SystemEvents.dll" `
+                "$buildPath\PDFtoImage.dll" `
+                "$buildPath\SkiaSharp.dll" `
+                "$buildPath\System.Diagnostics.DiagnosticSource.dll" `
+                "$buildPath\System.Drawing.Common.dll" `
+                "$buildPath\System.Private.Windows.Core.dll"
+        
 
     - name: Prepare test execution
       run: |
@@ -359,4 +385,5 @@ jobs:
             }
         }
         
-        Write-Host "Windows COM tests completed successfully"
+        Write-Host "net481 dll's COM tests completed successfully"
+        

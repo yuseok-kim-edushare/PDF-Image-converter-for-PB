@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>CrossPlatformTest</RootNamespace>
+    <AssemblyName>CrossPlatformTest</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Description>Cross-Platform Functionality Test for PdfToImageConverter</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../PdfToImageConverter.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="test.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
