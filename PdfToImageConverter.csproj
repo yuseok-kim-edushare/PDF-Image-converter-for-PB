@@ -46,7 +46,6 @@
     <!-- Default to current platform, can be overridden at build time -->
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('OSX'))">osx-x64</RuntimeIdentifier>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
     <!-- For Apple Silicon Macs: Set RuntimeIdentifier=osx-arm64 manually when building for Apple Silicon. -->
     <ComVisible Condition="'$(RuntimeIdentifier)' == 'win-x64' OR '$(RuntimeIdentifier)' == 'win-x86'">true</ComVisible>
     <ComVisible Condition="'$(RuntimeIdentifier)' != 'win-x64' AND '$(RuntimeIdentifier)' != 'win-x86'">false</ComVisible>
@@ -56,11 +55,6 @@
   <!-- Additional packages for macOS support -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' AND ('$(RuntimeIdentifier)' == 'osx-x64' OR '$(RuntimeIdentifier)' == 'osx-arm64')">
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.0" />
-  </ItemGroup>
-
-  <!-- Additional packages for Linux support -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' AND '$(RuntimeIdentifier)' == 'linux-x64'">
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
   </ItemGroup>
 
 </Project> 
