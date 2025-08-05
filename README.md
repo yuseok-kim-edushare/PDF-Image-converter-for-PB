@@ -1,8 +1,8 @@
 # PDF to Image Converter .NET Library (Cross-Platform)
 
 This is a cross-platform .NET library that converts PDF files to PNG images while maintaining the original PDF dimensions. </br>
-The library is designed to work on Windows, macOS, and Linux systems. </br>
-It can be used with PowerBuilder applications on Windows, or as a .NET library on any supported platform.
+The library is designed to work on Windows and macOS systems. </br>
+It can be used with PowerBuilder applications on Windows, or as a .NET library on supported platforms.
 
 [![CI tests](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml)
 [![local CI tests with Powerbuilder](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci-pb.yaml)
@@ -13,7 +13,7 @@ It can be used with PowerBuilder applications on Windows, or as a .NET library o
 - Maintains original PDF dimensions
 - Supports multi-page PDFs
 - Configurable DPI settings
-- **Cross-platform support**: Windows, macOS (Intel/Apple Silicon), Linux
+- **Cross-platform support**: Windows, macOS (Intel/Apple Silicon)
 - COM-visible for use in PowerBuilder (Windows only)
 - Self-contained deployment options
 
@@ -30,7 +30,6 @@ It can be used with PowerBuilder applications on Windows, or as a .NET library o
 - Supported platforms:
   - Windows (x64, x86)
   - macOS (Intel x64, Apple Silicon ARM64)
-  - Linux (x64)
 
 ## Building the Library
 
@@ -54,9 +53,6 @@ dotnet publish PdfToImageConverter.csproj -c Release -f net8.0 -r osx-x64 --self
 
 # macOS Apple Silicon  
 dotnet publish PdfToImageConverter.csproj -c Release -f net8.0 -r osx-arm64 --self-contained
-
-# Linux x64
-dotnet publish PdfToImageConverter.csproj -c Release -f net8.0 -r linux-x64 --self-contained
 ```
 
 The `--self-contained` flag includes all native dependencies needed for PDF processing.
@@ -219,8 +215,7 @@ If you want to specify custom output paths for each page, you can use `ConvertPd
 For cross-platform deployment, use the published self-contained versions which include all native dependencies:
 
 - **Windows**: Include libpdfium.dll and libSkiaSharp.dll
-- **macOS**: Include libpdfium.dylib and libSkiaSharp.dylib  
-- **Linux**: Include libpdfium.so and libSkiaSharp.so
+- **macOS**: Include libpdfium.dylib and libSkiaSharp.dylib
 
 The `--self-contained` publish option automatically includes these dependencies.
 
