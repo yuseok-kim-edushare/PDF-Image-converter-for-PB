@@ -47,8 +47,7 @@
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-x64</RuntimeIdentifier>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('OSX'))">osx-x64</RuntimeIdentifier>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' AND $([MSBuild]::IsOSPlatform('Linux'))">linux-x64</RuntimeIdentifier>
-    <!-- For Apple Silicon Macs -->
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == 'osx-x64' AND '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">osx-arm64</RuntimeIdentifier>
+    <!-- For Apple Silicon Macs: Set RuntimeIdentifier=osx-arm64 manually when building for Apple Silicon. -->
     <ComVisible Condition="'$(RuntimeIdentifier)' == 'win-x64' OR '$(RuntimeIdentifier)' == 'win-x86'">true</ComVisible>
     <ComVisible Condition="'$(RuntimeIdentifier)' != 'win-x64' AND '$(RuntimeIdentifier)' != 'win-x86'">false</ComVisible>
     <DelaySign>false</DelaySign>
