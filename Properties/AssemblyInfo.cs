@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 
-// COM visibility for cross-platform compatibility
-#if NET481 || (NET8_0 && WINDOWS)
+// COM visibility - true for Windows (.NET 8), false for macOS (.NET 9)
+#if NET8_0
 [assembly: ComVisible(true)]
 #else
 [assembly: ComVisible(false)]

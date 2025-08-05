@@ -81,7 +81,7 @@ namespace CrossPlatformTest
                     bool allNamesFound = true;
                     foreach (var pageName in pageNames)
                     {
-                        var expectedFile = Path.Combine(tempDir, $"test_named_{pageName}.png");
+                        var expectedFile = Path.Combine(tempDir, $"{pageName}.png");
                         if (File.Exists(expectedFile))
                         {
                             var fileInfo = new FileInfo(expectedFile);
@@ -89,7 +89,7 @@ namespace CrossPlatformTest
                         }
                         else
                         {
-                            Console.WriteLine($"   ❌ Missing: test_named_{pageName}.png");
+                            Console.WriteLine($"   ❌ Missing: {pageName}.png");
                             allNamesFound = false;
                         }
                     }
@@ -123,15 +123,15 @@ namespace CrossPlatformTest
                     bool allPathsFound = true;
                     for (int i = 0; i < Math.Min(pageNames.Length, pagePaths.Length); i++)
                     {
-                        var expectedFile = Path.Combine(tempDir, pagePaths[i], $"test_paths_{pageNames[i]}.png");
+                        var expectedFile = Path.Combine(tempDir, pagePaths[i], $"{pageNames[i]}.png");
                         if (File.Exists(expectedFile))
                         {
                             var fileInfo = new FileInfo(expectedFile);
-                            Console.WriteLine($"   ✅ Found: {pagePaths[i]}/test_paths_{pageNames[i]}.png ({fileInfo.Length} bytes)");
+                            Console.WriteLine($"   ✅ Found: {pagePaths[i]}/{pageNames[i]}.png ({fileInfo.Length} bytes)");
                         }
                         else
                         {
-                            Console.WriteLine($"   ❌ Missing: {pagePaths[i]}/test_paths_{pageNames[i]}.png");
+                            Console.WriteLine($"   ❌ Missing: {pagePaths[i]}/{pageNames[i]}.png");
                             allPathsFound = false;
                         }
                     }

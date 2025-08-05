@@ -32,7 +32,7 @@ namespace PdfToImageConverter
     [ComVisible(true)]
     [Guid("02FCF9B4-E978-4FE0-B5F3-F66F11B30AE7")]
     [ClassInterface(ClassInterfaceType.None)]
-#if NET481 || (NET8_0 && WINDOWS)
+#if NET8_0
     [ComSourceInterfaces(typeof(IPdfConverter))]
     [ProgId("PdfToImageConverter.PdfConverter")]
 #endif
@@ -69,7 +69,7 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");
                 
                 // Rethrow with more specific message for COM clients on Windows
-#if NET481 || (NET8_0 && WINDOWS)
+#if NET8_0
                 throw new COMException($"Failed to initialize PdfConverter: {ex.Message}", ex);
 #else
                 throw new InvalidOperationException($"Failed to initialize PdfConverter: {ex.Message}", ex);
@@ -106,7 +106,7 @@ namespace PdfToImageConverter
                 catch (DllNotFoundException dllEx)
                 {
                     File.AppendAllText(logPath, $"SkiaSharp DLL not found: {dllEx.Message}\n");
-#if NET481 || (NET8_0 && WINDOWS)
+#if NET8_0
                     throw new COMException("Failed to load SkiaSharp native dependencies. Please ensure all required DLLs are present.", dllEx);
 #else
                     throw new InvalidOperationException("Failed to load SkiaSharp native dependencies. Please ensure all required native libraries are present.", dllEx);
@@ -116,7 +116,7 @@ namespace PdfToImageConverter
                 {
                     File.AppendAllText(logPath, $"SkiaSharp initialization failed: {ex.Message}\n");
                     File.AppendAllText(logPath, $"SkiaSharp error details: {ex}\n");
-#if NET481 || (NET8_0 && WINDOWS)
+#if NET8_0
                     throw new COMException("Failed to initialize SkiaSharp. Please ensure all native dependencies are properly installed.", ex);
 #else
                     throw new InvalidOperationException("Failed to initialize SkiaSharp. Please ensure all native dependencies are properly installed.", ex);

@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Match the main project's targeting strategy -->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('OSX')) OR '$(BuildForMacOS)' == 'true'">net8.0;net9.0</TargetFrameworks>
     <RootNamespace>CrossPlatformTest</RootNamespace>
     <AssemblyName>CrossPlatformTest</AssemblyName>
     <LangVersion>latest</LangVersion>
