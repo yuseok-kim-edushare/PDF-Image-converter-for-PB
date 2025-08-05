@@ -5,6 +5,8 @@
     <RootNamespace>PdfToImageConverter</RootNamespace>
     <AssemblyName>PdfToImageConverter</AssemblyName>
     <LangVersion>latest</LangVersion>
+    <!-- Explicitly disable assembly info generation to prevent duplicates -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <ComVisible>true</ComVisible>
     <Guid>7402F27D-79BB-44EA-92B4-B6492F74C6EC</Guid>
   </PropertyGroup>
