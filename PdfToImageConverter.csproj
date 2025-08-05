@@ -4,21 +4,9 @@
     <TargetFrameworks>net481;net8.0</TargetFrameworks>
     <RootNamespace>PdfToImageConverter</RootNamespace>
     <AssemblyName>PdfToImageConverter</AssemblyName>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>PdfToImageConverter.snk</AssemblyOriginatorKeyFile>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DelaySign>true</DelaySign>
     <LangVersion>latest</LangVersion>
-    <AssemblyTitle>PdfToImageConverter</AssemblyTitle>
-    <Description>PDF to Image Converter Cross-Platform Library</Description>
-    <Company>YuSeok Kim</Company>
-    <Product>PdfToImageConverter</Product>
-    <Copyright>Copyright © 2025</Copyright>
-    <Trademark>YuSeok Kim</Trademark>
     <ComVisible>true</ComVisible>
     <Guid>7402F27D-79BB-44EA-92B4-B6492F74C6EC</Guid>
-    <AssemblyVersion>1.3.2</AssemblyVersion>
-    <FileVersion>1.3.2</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
