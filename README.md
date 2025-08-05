@@ -1,8 +1,8 @@
-# PDF to Image Converter .NET Library For PowerBuilder
+# PDF to Image Converter .NET Library (Cross-Platform)
 
-This is a .NET library that converts PDF files to PNG images while maintaining the original PDF dimensions. </br>
-The library is specifically designed to be used with PowerBuilder applications. </br>
-but other COM or anyway to invoke .NET(C#) DLL invoking way can works
+This is a cross-platform .NET library that converts PDF files to PNG images while maintaining the original PDF dimensions. </br>
+The library is designed to work on Windows, macOS, and Linux systems. </br>
+It can be used with PowerBuilder applications on Windows, or as a .NET library on any supported platform.
 
 [![CI tests](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml)
 [![local CI tests with Powerbuilder](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci.yaml/badge.svg)](https://github.com/yuseok-kim-edushare/PDF-Image-converter-for-PB/actions/workflows/ci-pb.yaml)
@@ -13,17 +13,28 @@ but other COM or anyway to invoke .NET(C#) DLL invoking way can works
 - Maintains original PDF dimensions
 - Supports multi-page PDFs
 - Configurable DPI settings
-- COM-visible for use in PowerBuilder
+- **Cross-platform support**: Windows, macOS (Intel/Apple Silicon), Linux
+- COM-visible for use in PowerBuilder (Windows only)
+- Self-contained deployment options
 
 ## Requirements
 
-- .NET Framework 4.8.1 SDK for Development with build tool(select 1 of 2 options)
+### Windows (PowerBuilder/COM)
+- .NET Framework 4.8.1 SDK for Development with build tool (select 1 of 2 options)
    - Visual Studio 2019 or later for building the library
    - .NET 8 SDK for building the library
 - PowerBuilder 2019 R3 or later
 
+### Cross-Platform (.NET 8)
+- .NET 8 Runtime or SDK
+- Supported platforms:
+  - Windows (x64, x86)
+  - macOS (Intel x64, Apple Silicon ARM64)
+  - Linux (x64)
+
 ## Building the Library
 
+### Windows (for PowerBuilder)
 1. Open the solution in Visual Studio
 2. Build the solution in Release mode
 3. if you want to build with dotnet cli(cause of not having visual studio)
@@ -31,7 +42,88 @@ but other COM or anyway to invoke .NET(C#) DLL invoking way can works
    dotnet build PdfToImageConverter.csproj --configuration Release
    ```
 
-## Usage in PowerBuilder
+### Cross-Platform (.NET 8)
+For platform-specific builds:
+
+```bash
+# Windows x64
+dotnet publish PdfToImageConverter.csproj -c Release -f net8.0 -r win-x64 --self-contained
+
+# macOS Intel
+dotnet publish PdfToImageConverter.csproj -c Release -f net8.0 -r osx-x64 --self-contained
+
+# macOS Apple Silicon  
+dotnet publish PdfToImageConverter.csproj -c Release -f net8.0 -r osx-arm64 --self-contained
+
+# Linux x64
+dotnet publish PdfToImageConverter.csproj -c Release -f net8.0 -r linux-x64 --self-contained
+```
+
+The `--self-contained` flag includes all native dependencies needed for PDF processing.
+
+## Usage in .NET Applications (Cross-Platform)
+
+You can use the library directly in any .NET 8+ application:
+
+### C# Example
+```csharp
+using PdfToImageConverter;
+
+class Program
+{
+    static void Main()
+    {
+        var converter = new PdfConverter();
+        
+        string result = converter.ConvertPdfToImage(
+            "/path/to/input.pdf", 
+            "/path/to/output.png", 
+            300  // DPI
+        );
+        
+        if (result.StartsWith("SUCCESS"))
+        {
+            Console.WriteLine("Conversion successful!");
+        }
+        else
+        {
+            Console.WriteLine($"Error: {result}");
+        }
+    }
+}
+```
+
+### F# Example
+```fsharp
+open PdfToImageConverter
+
+let converter = new PdfConverter()
+let result = converter.ConvertPdfToImage("/path/to/input.pdf", "/path/to/output.png", 300)
+
+match result.StartsWith("SUCCESS") with
+| true -> printfn "Conversion successful!"
+| false -> printfn "Error: %s" result
+```
+
+### VB.NET Example
+```vb
+Imports PdfToImageConverter
+
+Module Program
+    Sub Main()
+        Dim converter As New PdfConverter()
+        Dim result As String = converter.ConvertPdfToImage("/path/to/input.pdf", "/path/to/output.png", 300)
+        
+        If result.StartsWith("SUCCESS") Then
+            Console.WriteLine("Conversion successful!")
+        Else
+            Console.WriteLine($"Error: {result}")
+        End If
+    End Sub
+End Module
+```
+
+## Usage in PowerBuilder (Windows)
 
 1. Use PowerBuilder's ".NET DLL Importer" tool to import the assembly:
    - Open your PowerBuilder project
@@ -115,6 +207,22 @@ If you want to specify custom output paths for each page, you can use `ConvertPd
 - then you got specific page names in specific folders like
   - `C:\output\folder1\Apple.png`
   - `C:\output\folder2\Banana.png`
+
+## Deployment
+
+### Windows PowerBuilder
+- Deploy the .NET Framework 4.8.1 version (net481)
+- Register with regasm.exe for COM visibility
+- Include all managed dependencies
+
+### Cross-Platform .NET Applications
+For cross-platform deployment, use the published self-contained versions which include all native dependencies:
+
+- **Windows**: Include libpdfium.dll and libSkiaSharp.dll
+- **macOS**: Include libpdfium.dylib and libSkiaSharp.dylib  
+- **Linux**: Include libpdfium.so and libSkiaSharp.so
+
+The `--self-contained` publish option automatically includes these dependencies.
 
 ## Error Handling
 

@@ -38,8 +38,10 @@ jobs:
     - name: Build solution for release
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Release --no-restore -f net481
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net9.0-maccatalyst
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0 -r win-x64
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0 -r linux-x64
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0 -r osx-x64
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0 -r osx-arm64
 
     - name: Install ILRepack
       run: |
@@ -110,8 +112,8 @@ jobs:
             exit 1
         }
 
-        # merge and copy net8.0
-        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\win-x86\publish"
+        # merge and copy net8.0 for different platforms
+        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\win-x64\publish"
         Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net8.0
         Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net8.0
 
@@ -131,10 +133,19 @@ jobs:
             "$buildPath\System.Drawing.Common.dll" `
             "$buildPath\System.Private.Windows.Core.dll"
 
-        # copy net9.0-maccatalyst
-        $buildPath = "${{ github.workspace }}\bin\Release\net9.0-maccatalyst\macos-arm64"
-        Rename-Item -Path "$buildPath\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net9.0-maccatalyst.dll"
-        Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net9.0-maccatalyst -Recurse -Force
+        # copy macOS builds
+        New-Item -Path $releaseDir\net8.0-osx-x64 -ItemType Directory -Force
+        New-Item -Path $releaseDir\net8.0-osx-arm64 -ItemType Directory -Force
+        New-Item -Path $releaseDir\net8.0-linux-x64 -ItemType Directory -Force
+        
+        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\osx-x64"
+        Copy-Item -Path "$buildPath\PdfToImageConverter.dll" -Destination $releaseDir\net8.0-osx-x64\PdfToImageConverter-net8.0-osx-x64.dll
+        
+        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\osx-arm64"
+        Copy-Item -Path "$buildPath\PdfToImageConverter.dll" -Destination $releaseDir\net8.0-osx-arm64\PdfToImageConverter-net8.0-osx-arm64.dll
+        
+        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\linux-x64"
+        Copy-Item -Path "$buildPath\PdfToImageConverter.dll" -Destination $releaseDir\net8.0-linux-x64\PdfToImageConverter-net8.0-linux-x64.dll
         
         # Create ZIP archive
         Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
@@ -193,7 +204,9 @@ jobs:
           ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
           ${{ github.workspace }}\release-files\net481\PdfToImageConverter.dll
           ${{ github.workspace }}\release-files\net8.0\PdfToImageConverter-net8.0.dll
-          ${{ github.workspace }}\release-files\net9.0-maccatalyst\PdfToImageConverter-net9.0-maccatalyst.dll
+          ${{ github.workspace }}\release-files\net8.0-osx-x64\PdfToImageConverter-net8.0-osx-x64.dll
+          ${{ github.workspace }}\release-files\net8.0-osx-arm64\PdfToImageConverter-net8.0-osx-arm64.dll
+          ${{ github.workspace }}\release-files\net8.0-linux-x64\PdfToImageConverter-net8.0-linux-x64.dll
         tag_name: ${{ env.new_release }}
         name: Release ${{ env.new_release }}
         body: ${{ env.release_notes }}
