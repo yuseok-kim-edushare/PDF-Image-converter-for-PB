@@ -46,7 +46,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-maccatalyst'">
     <PackageReference Include="System.Drawing.Common" Version="9.0.8" />
-    <PackageReference Include="bblanchon.PDFium.macOS" Version="141.0.7374" />
+    <PackageReference Include="bblanchon.PDFium.macOS" Version="141.0.7388" />
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.0" />
     <PackageReference Include="SkiaSharp" Version="3.119.0" />
   </ItemGroup>
