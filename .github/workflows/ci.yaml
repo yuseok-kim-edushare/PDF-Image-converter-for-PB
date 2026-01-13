@@ -30,6 +30,7 @@ jobs:
      
     - name: Restore NuGet packages
       run: |
+        dotnet workload restore
         dotnet restore PdfToImageConverter.csproj
 
     - name: Add msbuild to PATH
@@ -37,7 +38,6 @@ jobs:
     
     - name: Build solution for testing
       run: |
-        dotnet workload install maccatalyst
         dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
         dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0
         dotnet publish PdfToImageConverter.csproj --configuration Debug -f net9.0-maccatalyst
