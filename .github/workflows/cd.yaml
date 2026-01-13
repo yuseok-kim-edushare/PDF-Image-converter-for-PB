@@ -140,7 +140,7 @@ jobs:
         Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net9.0-maccatalyst -Recurse -Force
 
         # copy net10.0-maccatalyst
-        $buildPath = "${{ github.workspace }}\bin\Release\net10.0-maccatalyst\maccatalyst-arm64"
+        $buildPath = "${{ github.workspace }}\bin\Release\net10.0-maccatalyst\macos-arm64"
         Rename-Item -Path "$buildPath\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net10.0-maccatalyst.dll"
         Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net10.0-maccatalyst -Recurse -Force
         
