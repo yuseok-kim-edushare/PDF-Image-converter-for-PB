@@ -39,7 +39,7 @@ jobs:
     - name: Build solution for release
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Release --no-restore -f net481
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net10.0
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0
         dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net10.0-maccatalyst
 
     - name: Install ILRepack
@@ -60,7 +60,7 @@ jobs:
         # Create release directory
         New-Item -Path $releaseDir -ItemType Directory -Force
         New-Item -Path $releaseDir\net481 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net10.0 -ItemType Directory -Force
+        New-Item -Path $releaseDir\net8.0 -ItemType Directory -Force
         New-Item -Path $releaseDir\net10.0-maccatalyst -ItemType Directory -Force
 
         # Copy all build artifacts recursively
@@ -112,11 +112,11 @@ jobs:
         }
 
         # merge and copy net10.0
-        $buildPath = "${{ github.workspace }}\bin\Release\net10.0\win-x86\publish"
-        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net10.0
-        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net10.0
+        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\win-x86\publish"
+        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net8.0
+        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net8.0
 
-        ilrepack /out:"$releaseDir\net10.0\PdfToImageConverter-net10.0.dll" `
+        ilrepack /out:"$releaseDir\net10.0\PdfToImageConverter-net8.0.dll" `
             /lib:"$buildPath" `
             /union `
             /copyattrs `
@@ -198,7 +198,6 @@ jobs:
           ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
           ${{ github.workspace }}\release-files\net481\PdfToImageConverter.dll
           ${{ github.workspace }}\release-files\net8.0\PdfToImageConverter-net8.0.dll
-          ${{ github.workspace }}\release-files\net9.0-maccatalyst\PdfToImageConverter-net9.0-maccatalyst.dll
           ${{ github.workspace }}\release-files\net10.0-maccatalyst\PdfToImageConverter-net10.0-maccatalyst.dll
         tag_name: ${{ env.new_release }}
         name: Release ${{ env.new_release }}
