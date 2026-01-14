@@ -111,12 +111,12 @@ jobs:
             exit 1
         }
 
-        # merge and copy net10.0
+        # merge and copy net8.0
         $buildPath = "${{ github.workspace }}\bin\Release\net8.0\win-x86\publish"
         Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net8.0
         Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net8.0
 
-        ilrepack /out:"$releaseDir\net10.0\PdfToImageConverter-net8.0.dll" `
+        ilrepack /out:"$releaseDir\net8.0\PdfToImageConverter-net8.0.dll" `
             /lib:"$buildPath" `
             /union `
             /copyattrs `
