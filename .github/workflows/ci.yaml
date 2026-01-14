@@ -40,7 +40,6 @@ jobs:
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
         dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0
-        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net9.0-maccatalyst
         dotnet publish PdfToImageConverter.csproj --configuration Debug -f net10.0-maccatalyst
 
     - name: Install ILRepack and merge DLLs
