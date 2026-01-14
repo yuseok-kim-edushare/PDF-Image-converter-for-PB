@@ -39,8 +39,7 @@ jobs:
     - name: Build solution for release
       run: |
         dotnet build PdfToImageConverter.csproj --configuration Release --no-restore -f net481
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net9.0-maccatalyst
+        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net10.0
         dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net10.0-maccatalyst
 
     - name: Install ILRepack
@@ -61,8 +60,7 @@ jobs:
         # Create release directory
         New-Item -Path $releaseDir -ItemType Directory -Force
         New-Item -Path $releaseDir\net481 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net8.0 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net9.0-maccatalyst -ItemType Directory -Force
+        New-Item -Path $releaseDir\net10.0 -ItemType Directory -Force
         New-Item -Path $releaseDir\net10.0-maccatalyst -ItemType Directory -Force
 
         # Copy all build artifacts recursively
@@ -113,12 +111,12 @@ jobs:
             exit 1
         }
 
-        # merge and copy net8.0
-        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\win-x86\publish"
-        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net8.0
-        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net8.0
+        # merge and copy net10.0
+        $buildPath = "${{ github.workspace }}\bin\Release\net10.0\win-x86\publish"
+        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net10.0
+        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net10.0
 
-        ilrepack /out:"$releaseDir\net8.0\PdfToImageConverter-net8.0.dll" `
+        ilrepack /out:"$releaseDir\net10.0\PdfToImageConverter-net10.0.dll" `
             /lib:"$buildPath" `
             /union `
             /copyattrs `
@@ -133,11 +131,6 @@ jobs:
             "$buildPath\System.Diagnostics.DiagnosticSource.dll" `
             "$buildPath\System.Drawing.Common.dll" `
             "$buildPath\System.Private.Windows.Core.dll"
-
-        # copy net9.0-maccatalyst
-        $buildPath = "${{ github.workspace }}\bin\Release\net9.0-maccatalyst\macos-arm64"
-        Rename-Item -Path "$buildPath\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net9.0-maccatalyst.dll"
-        Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net9.0-maccatalyst -Recurse -Force
 
         # copy net10.0-maccatalyst
         $buildPath = "${{ github.workspace }}\bin\Release\net10.0-maccatalyst\macos-arm64"
@@ -175,17 +168,6 @@ jobs:
           $releaseNotes += "`n"
           $releaseNotes += (git ls-files | ForEach-Object { "Added $_" }) -join "`n"
         }
-        
-        echo "new_release=$newVersionString" >> $env:GITHUB_ENV
-        $releaseNotes | Out-File -FilePath releaseNotes.txt -Encoding utf8
-        $releaseNotesContent = Get-Content -Path releaseNotes.txt -Raw
-        echo "release_notes<<EOF" >> $env:GITHUB_ENV
-        echo "$releaseNotesContent" >> $env:GITHUB_ENV
-        echo "EOF" >> $env:GITHUB_ENV
-
-    - name: Explicit Version Order apply to create release
-      run: |
-        $latestCommitMessage = (git log -1 --pretty=%B)
         foreach ($line in $latestCommitMessage) {
           if ($line -match "Update Version to (\d+\.\d+\.\d+)") {
             $messageParts = $line -split ' '
@@ -193,6 +175,21 @@ jobs:
             echo "new_release=$lastPart" >> $env:GITHUB_ENV
           }
         }
+        echo "new_release=$newVersionString" >> $env:GITHUB_ENV
+        $latestCommitMessage = (git log HEAD ^$latest_release -1 --pretty=%B)
+        foreach ($line in $latestCommitMessage) {
+          if ($line -match "Update Version to (\d+\.\d+\.\d+)") {
+            $messageParts = $line -split ' '
+            $lastPart = $messageParts[-1]
+            echo "new_release=$lastPart" >> $env:GITHUB_ENV
+          }
+        }
+        $releaseNotes | Out-File -FilePath releaseNotes.txt -Encoding utf8
+        $releaseNotesContent = Get-Content -Path releaseNotes.txt -Raw
+        echo "release_notes<<EOF" >> $env:GITHUB_ENV
+        echo "$releaseNotesContent" >> $env:GITHUB_ENV
+        echo "EOF" >> $env:GITHUB_ENV
+
         
     - name: Create Release
       uses: softprops/action-gh-release@v2
