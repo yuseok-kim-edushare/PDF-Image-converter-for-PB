@@ -46,6 +46,7 @@ jobs:
       run: |
         try {
              dotnet tool install -g dotnet-ilrepack
+             Add-Content $env:GITHUB_PATH "$env:USERPROFILE\.dotnet\tools"
          } catch {
              Write-Host "Error installing ILRepack: $_" -ForegroundColor Red
          }
