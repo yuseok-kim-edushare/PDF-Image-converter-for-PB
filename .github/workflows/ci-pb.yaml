@@ -37,6 +37,9 @@ jobs:
     - name: Restore NuGet packages
       run: |
         dotnet restore PdfToImageConverter.csproj
+        # Dotnet Global Tool add to path
+        $toolPath = "$env:USERPROFILE\.dotnet\tools"
+        $env:PATH += ";$toolPath"
 
     - name: Build solution for testing
       run: |
