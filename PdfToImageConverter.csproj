@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="PDFtoImage" Version="5.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net481'">
@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-    <PackageReference Include="System.Drawing.Common" Version="10.0.2" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-maccatalyst'">
@@ -42,10 +42,10 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-maccatalyst'">
-    <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
-    <PackageReference Include="bblanchon.PDFium.macOS" Version="143.0.7455" />
-    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.1" />
-    <PackageReference Include="SkiaSharp" Version="3.119.1" />
+    <PackageReference Include="System.Drawing.Common" Version="10.0.3" />
+    <PackageReference Include="bblanchon.PDFium.macOS" Version="146.0.7678" />
+    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.2" />
+    <PackageReference Include="SkiaSharp" Version="3.119.2" />
   </ItemGroup>
 
 </Project> 
