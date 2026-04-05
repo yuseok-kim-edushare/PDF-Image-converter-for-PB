@@ -36,6 +36,7 @@ jobs:
      
     - name: Restore NuGet packages
       run: |
+        dotnet workload restore
         dotnet restore PdfToImageConverter.csproj
         # Dotnet Global Tool add to path
         $toolPath = "$env:USERPROFILE\.dotnet\tools"
