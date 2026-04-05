@@ -37,7 +37,7 @@
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-maccatalyst'">
     <ComVisible>false</ComVisible>
-    <RuntimeIdentifier>macos-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier>maccatalyst-arm64</RuntimeIdentifier>
     <DelaySign>false</DelaySign>
   </PropertyGroup>
 
