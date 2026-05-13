@@ -14,7 +14,7 @@ permissions:
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    runs-on: windows-2022
+    runs-on: windows-2025
 
     steps:
     - name: Checkout code
@@ -133,9 +133,9 @@ jobs:
             "$buildPath\System.Private.Windows.Core.dll"
 
         # copy net10.0-maccatalyst
-        $buildPath = "${{ github.workspace }}\bin\Release\net10.0-maccatalyst\macos-arm64"
-        Rename-Item -Path "$buildPath\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net10.0-maccatalyst.dll"
-        Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net10.0-maccatalyst -Recurse -Force
+        # $buildPath = "${{ github.workspace }}\bin\Release\net10.0-maccatalyst\macos-arm64"
+        # Rename-Item -Path "$buildPath\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net10.0-maccatalyst.dll"
+        # Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net10.0-maccatalyst -Recurse -Force
         
         # Create ZIP archive
         Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
