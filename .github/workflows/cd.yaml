@@ -198,7 +198,6 @@ jobs:
           ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
           ${{ github.workspace }}\release-files\net481\PdfToImageConverter.dll
           ${{ github.workspace }}\release-files\net8.0\PdfToImageConverter-net8.0.dll
-          ${{ github.workspace }}\release-files\net10.0-maccatalyst\PdfToImageConverter-net10.0-maccatalyst.dll
         tag_name: ${{ env.new_release }}
         name: Release ${{ env.new_release }}
         body: ${{ env.release_notes }}
