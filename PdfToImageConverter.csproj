@@ -30,8 +30,6 @@
   <ItemGroup>
     <!-- Force Update MS managed Nuget packages to reflect MS 26-05 security patches -->
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.8" />
-    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.60" />
-    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.60" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.2.2" />
     <PackageReference Include="MSTest.TestFramework" Version="4.2.2" />
@@ -55,7 +53,10 @@
     <!-- Force Update MS managed Nuget packages to reflect MS 26-05 security patches -->
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.8" />
-    
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.60" />
+    <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="10.0.60" />
+
+
     <PackageReference Include="System.Drawing.Common" Version="10.0.8" />
     <PackageReference Include="bblanchon.PDFium.macOS" Version="146.0.7678" />
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.2" />
