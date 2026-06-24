@@ -126,7 +126,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.9" />
     <PackageReference Include="Microsoft.Win32.SystemEvents" Version="10.0.9" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="SkiaSharp.NativeAssets.MacCatalyst" Version="3.119.4" />
+    <PackageReference Include="SkiaSharp.NativeAssets.MacCatalyst" Version="4.148.0" />
     <!-- Pin transitive packages from Microsoft.ApplicationInsights 3.x (maccatalyst) -->
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="10.0.9" />
     <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="10.0.9" />
