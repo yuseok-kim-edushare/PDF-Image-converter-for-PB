@@ -39,7 +39,7 @@
     <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.8.2" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.86.1" />
     <PackageReference Include="Microsoft.Identity.Client.Extensions.Msal" Version="4.86.1" />
-    <PackageReference Include="Microsoft.IdentityModel.Abstractions" Version="8.20.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Abstractions" Version="8.21.0" />
     <PackageReference Include="OpenTelemetry.PersistentStorage.Abstractions" Version="1.1.1" />
     <PackageReference Include="OpenTelemetry.PersistentStorage.FileSystem" Version="1.1.1" />
     <PackageReference Include="System.ClientModel" Version="1.14.0" />
