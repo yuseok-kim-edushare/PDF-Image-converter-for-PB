@@ -38,9 +38,9 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.151.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.151.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.151.0" />
-    <PackageReference Include="bblanchon.PDFium.Win32" Version="152.0.7961" />
-    <PackageReference Include="bblanchon.PDFium.Linux" Version="152.0.7961" />
-    <PackageReference Include="bblanchon.PDFium.macOS" Version="152.0.7961" />
+    <PackageReference Include="bblanchon.PDFium.Win32" Version="153.0.7988" />
+    <PackageReference Include="bblanchon.PDFium.Linux" Version="153.0.7988" />
+    <PackageReference Include="bblanchon.PDFium.macOS" Version="153.0.7988" />
   </ItemGroup>
 
   <ItemGroup>
