@@ -78,16 +78,13 @@ jobs:
                 /internalize `
                 /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
                 "$buildPath\PdfToImageConverter.dll" `
-                "$buildPath\Microsoft.Extensions.Logging.Abstractions.dll" `
                 "$buildPath\PDFtoImage.dll" `
                 "$buildPath\SkiaSharp.dll" `
                 "$buildPath\System.Buffers.dll" `
                 "$buildPath\System.Memory.dll" `
                 "$buildPath\System.Numerics.Vectors.dll" `
                 "$buildPath\System.Runtime.CompilerServices.Unsafe.dll" `
-                "$buildPath\Microsoft.Bcl.AsyncInterfaces.dll" `
-                "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll" `
-                "$buildPath\System.Diagnostics.DiagnosticSource.dll" `  
+                "$buildPath\System.Diagnostics.DiagnosticSource.dll" `
                 "$buildPath\System.Threading.Tasks.Extensions.dll"
 
             # Delete unnecessary files
@@ -124,14 +121,8 @@ jobs:
             /internalize `
             /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
             "$buildPath\PdfToImageConverter.dll" `
-            "$buildPath\Microsoft.Extensions.DependencyInjection.Abstractions.dll" `
-            "$buildPath\Microsoft.Extensions.Logging.Abstractions.dll" `
-            "$buildPath\Microsoft.Win32.SystemEvents.dll" `
             "$buildPath\PDFtoImage.dll" `
-            "$buildPath\SkiaSharp.dll" `
-            "$buildPath\System.Diagnostics.DiagnosticSource.dll" `
-            "$buildPath\System.Drawing.Common.dll" `
-            "$buildPath\System.Private.Windows.Core.dll"
+            "$buildPath\SkiaSharp.dll"
 
         # copy net10.0-maccatalyst
         # $buildPath = "${{ github.workspace }}\bin\Release\net10.0-maccatalyst\macos-arm64"

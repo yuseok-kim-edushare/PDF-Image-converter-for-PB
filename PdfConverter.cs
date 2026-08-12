@@ -36,7 +36,7 @@ namespace PdfToImageConverter
     [ProgId("PdfToImageConverter.PdfConverter")]
     public class PdfConverter : IPdfConverter
     {
-        private const string TEMP_DIR = @"C:\temp\Powerbuilder-pdf2img";
+        private static readonly string TEMP_DIR = Path.Combine(Path.GetTempPath(), "Powerbuilder-pdf2img");
         private static readonly object _initLock = new object();
         private static bool _initialized = false;
 
@@ -172,6 +172,17 @@ namespace PdfToImageConverter
             return fileName;
         }
 
+        private static string FormatArrayForLog(string[] values)
+        {
+            return values == null ? "<null>" : string.Join(", ", values);
+        }
+
+        private static string ResolveBaseOutputDirectory(string outputPath)
+        {
+            string directory = Path.GetDirectoryName(outputPath);
+            return string.IsNullOrEmpty(directory) ? Directory.GetCurrentDirectory() : directory;
+        }
+
         private string GetPageOutputPath(string outputPath, int pageNumber, int pageCount)
         {
             if (pageCount > 1)
@@ -187,7 +198,7 @@ namespace PdfToImageConverter
         private string GetPageOutputPathForPageName(string outputPath, string pageName)
         {
             string extension = Path.GetExtension(outputPath);
-            string directory = Path.GetDirectoryName(outputPath);
+            string directory = Path.GetDirectoryName(outputPath) ?? string.Empty;
             // Sanitize the page name to ensure it doesn't contain invalid filename characters
             string sanitizedPageName = SanitizeFileName(pageName);
             return Path.Combine(directory, $"{sanitizedPageName}{extension}");
@@ -346,7 +357,12 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Output Path: {outputPath}\n");
                 File.AppendAllText(logPath, $"DPI: {dpi}\n");
                 File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
-                File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
+                File.AppendAllText(logPath, $"Page Names: {FormatArrayForLog(pageNames)}\n");
+
+                if (pageNames == null || pageNames.Length == 0)
+                {
+                    return "Error: Page names array is null or empty";
+                }
 
                 // Sanitize all page names
                 for (int i = 0; i < pageNames.Length; i++)
@@ -374,11 +390,6 @@ namespace PdfToImageConverter
                 if (pageNames.Length < totalPagesNumber)
                 {
                     return $"Error: Page names array length ({pageNames.Length}) is less than total pages ({totalPagesNumber})";
-                }
-
-                if (pageNames.Length == 0)
-                {
-                    return "Error: Page names array is empty";  
                 }
 
                 if (pageNames.Any(name => string.IsNullOrEmpty(name)))
@@ -426,8 +437,13 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Output Path: {outputPath}\n");
                 File.AppendAllText(logPath, $"DPI: {dpi}\n");
                 File.AppendAllText(logPath, $"Total Pages Number: {totalPagesNumber}\n");
-                File.AppendAllText(logPath, $"Page Names: {string.Join(", ", pageNames)}\n");
-                File.AppendAllText(logPath, $"Page Paths: {string.Join(", ", pagePaths)}\n");
+                File.AppendAllText(logPath, $"Page Names: {FormatArrayForLog(pageNames)}\n");
+                File.AppendAllText(logPath, $"Page Paths: {FormatArrayForLog(pagePaths)}\n");
+
+                if (pageNames == null || pageNames.Length == 0)
+                {
+                    return "Error: Page names array is null or empty";
+                }
 
                 // Use common validation method
                 byte[] pdfBytes;
@@ -440,16 +456,22 @@ namespace PdfToImageConverter
                 // Validate outputPaths
                 if (pagePaths == null || pagePaths.Length == 0)
                 {
-                    return "Error: Output paths array is empty";
+                    return "Error: Output paths array is null or empty";
                 }
                 if (pagePaths.Length < totalPagesNumber)
                 {
                     return $"Error: Output paths array length ({pagePaths.Length}) is less than total pages ({totalPagesNumber})";
                 }
-                foreach (var path in pagePaths)
+                for (int i = 0; i < pagePaths.Length; i++)
                 {
-                    string baseOutputDir = Path.GetDirectoryName(outputPath);
-                    string combinedPath = Path.Combine(baseOutputDir, path);
+                    var path = pagePaths[i];
+                    if (string.IsNullOrWhiteSpace(path))
+                    {
+                        return $"Error: Output path entry at index {i} is empty";
+                    }
+
+                    string baseOutputDir = ResolveBaseOutputDirectory(outputPath);
+                    string combinedPath = Path.IsPathRooted(path) ? path : Path.Combine(baseOutputDir, path);
                     
                     if (!ValidateFilePath(combinedPath))
                     {
@@ -474,11 +496,6 @@ namespace PdfToImageConverter
                 }
 
                 // Validate page names and total pages
-                if (pageNames == null || pageNames.Length == 0)
-                {
-                    return "Error: Page names array is empty";
-                }
-
                 if (pageNames.Any(name => string.IsNullOrEmpty(name)))
                 {
                     return "Error: Page names array contains empty strings";
@@ -502,8 +519,8 @@ namespace PdfToImageConverter
                     try
                     {
                         // Combine the base directory with the individual page path and filename
-                        string baseOutputDir = Path.GetDirectoryName(outputPath);
-                        string fullOutputDir = Path.Combine(baseOutputDir, pagePaths[pageNumber]);
+                        string baseOutputDir = ResolveBaseOutputDirectory(outputPath);
+                        string fullOutputDir = Path.IsPathRooted(pagePaths[pageNumber]) ? pagePaths[pageNumber] : Path.Combine(baseOutputDir, pagePaths[pageNumber]);
                         string pageOutputPath = Path.Combine(fullOutputDir, pageNames[pageNumber] + ".png");
                         
                         File.AppendAllText(logPath, $"Processing page {pageNumber}: Output path: {pageOutputPath}\n");
