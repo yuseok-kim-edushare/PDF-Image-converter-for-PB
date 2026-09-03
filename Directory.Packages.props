@@ -5,15 +5,15 @@
 
   <ItemGroup>
     <PackageVersion Include="PDFtoImage" Version="5.4.0" />
-    <PackageVersion Include="SkiaSharp" Version="4.151.1" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.151.1" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.151.1" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.151.1" />
+    <PackageVersion Include="SkiaSharp" Version="4.151.2" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.151.2" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.151.2" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.151.2" />
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="154.0.8035" />
     <PackageVersion Include="bblanchon.PDFium.Linux" Version="154.0.8035" />
     <PackageVersion Include="bblanchon.PDFium.macOS" Version="154.0.8035" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
-    <PackageVersion Include="MSTest.TestAdapter" Version="4.3.3" />
-    <PackageVersion Include="MSTest.TestFramework" Version="4.3.3" />
+    <PackageVersion Include="MSTest.TestAdapter" Version="4.4.0" />
+    <PackageVersion Include="MSTest.TestFramework" Version="4.4.0" />
   </ItemGroup>
 </Project>
