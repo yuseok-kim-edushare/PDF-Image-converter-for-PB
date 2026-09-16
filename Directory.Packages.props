@@ -12,7 +12,7 @@
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="155.0.8057" />
     <PackageVersion Include="bblanchon.PDFium.Linux" Version="155.0.8057" />
     <PackageVersion Include="bblanchon.PDFium.macOS" Version="155.0.8057" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="MSTest.TestAdapter" Version="4.4.0" />
     <PackageVersion Include="MSTest.TestFramework" Version="4.4.0" />
   </ItemGroup>
