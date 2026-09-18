@@ -5,10 +5,10 @@
 
   <ItemGroup>
     <PackageVersion Include="PDFtoImage" Version="5.4.0" />
-    <PackageVersion Include="SkiaSharp" Version="4.152.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.152.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.152.0" />
+    <PackageVersion Include="SkiaSharp" Version="4.152.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.152.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.152.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.152.1" />
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="155.0.8057" />
     <PackageVersion Include="bblanchon.PDFium.Linux" Version="155.0.8057" />
     <PackageVersion Include="bblanchon.PDFium.macOS" Version="155.0.8057" />
