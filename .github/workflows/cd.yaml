@@ -6,6 +6,11 @@ on:
       - completed
     branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      version:
+        description: Release version to publish, such as 2.0.0. Leave empty to bump the latest tag.
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -106,20 +111,25 @@ jobs:
       - name: Get latest release version and Generate release notes
         id: get_latest_release
         shell: pwsh
+        env:
+          MANUAL_VERSION: ${{ github.event.inputs.version }}
         run: |
           $latest_release = git tag --list --sort=-version:refname | Where-Object { $_ -match '^\d+\.\d+\.\d+$' } | Select-Object -First 1
-          $headSubject = (git log -1 --format=%s).Trim()
+          $manualVersion = $env:MANUAL_VERSION.Trim()
 
           if ($latest_release) {
             Write-Output "Latest release version: $latest_release"
             echo "latest_release=$latest_release" >> $env:GITHUB_ENV
 
-            if ($headSubject -match '^\d+\.\d+\.\d+$') {
-              $newVersionString = $headSubject
-              Write-Output "Using version from HEAD commit subject: $newVersionString"
-            } else {
-              $version = [Version]$latest_release
-              $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
+            $version = [Version]$latest_release
+            $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
+
+            # A commit body or subject may contain "Update Version To 2.0.0".
+            $messages = git log "$latest_release..HEAD" --pretty=%B
+            foreach ($line in $messages) {
+              if ($line -match 'Update Version To (\d+\.\d+\.\d+)') {
+                $newVersionString = $Matches[1]
+              }
             }
 
             $releaseNotes = "## Changes since " + $latest_release + "`n"
@@ -129,15 +139,20 @@ jobs:
             $releaseNotes += "`n"
             $releaseNotes += (git diff "$latest_release..HEAD" --compact-summary) -join "`n"
           } else {
-            Write-Output "No previous release found. Creating initial release 0.0.1"
-            $newVersionString = "0.0.1"
+            Write-Output "No previous release found. Creating release 2.0.0"
+            $newVersionString = "2.0.0"
 
-            $releaseNotes = "## Initial Release v0.0.1`n"
+            $releaseNotes = "## Release v2.0.0`n"
             $releaseNotes += (git log --oneline) -join "`n"
             $releaseNotes += "`n"
             $releaseNotes += "### Files included `n"
             $releaseNotes += "`n"
             $releaseNotes += (git ls-files | ForEach-Object { "Added $_" }) -join "`n"
+          }
+
+          if ($manualVersion -match '^\d+\.\d+\.\d+$') {
+            $newVersionString = $manualVersion
+            Write-Output "Using version from workflow dispatch: $newVersionString"
           }
 
           echo "new_release=$newVersionString" >> $env:GITHUB_ENV
