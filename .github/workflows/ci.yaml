@@ -20,6 +20,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v7
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: "10.0.x"
+
     - name: Cache NuGet packages
       uses: actions/cache@v6
       with:
@@ -31,16 +36,16 @@ jobs:
     - name: Restore NuGet packages
       run: |
         dotnet workload restore
-        dotnet restore PdfToImageConverter.csproj
+        dotnet restore PdfToImageConverter.slnx
 
     - name: Add msbuild to PATH
       uses: microsoft/setup-msbuild@v3
     
     - name: Build solution for testing
-      run: |
-        dotnet build PdfToImageConverter.csproj --configuration Debug -f net481
-        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net8.0
-        dotnet publish PdfToImageConverter.csproj --configuration Debug -f net10.0-maccatalyst
+      run: dotnet build src/PdfToImageConverter/PdfToImageConverter.csproj --configuration Debug -f net481
+
+    - name: Test managed libraries
+      run: dotnet test tests/PdfToImageConverter.Tests/PdfToImageConverter.Tests.csproj --configuration Debug --nologo
 
     - name: Install ILRepack and merge DLLs
       run: |
@@ -49,51 +54,30 @@ jobs:
          } catch {
              Write-Host "Error installing ILRepack: $_" -ForegroundColor Red
          }
+        $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
         
-        $buildPath = "${{ github.workspace }}\bin\Debug\net481\win-x86"
+        $buildPath = "${{ github.workspace }}\src\PdfToImageConverter\bin\Debug\net481\win-x86"
+        $snk = "${{ github.workspace }}\PdfToImageConverter.snk"
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
-        ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
-                /lib:"$buildPath" `
-                /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
-                /union `
-                /copyattrs `
-                /internalize `
-                /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
-                "$buildPath\PdfToImageConverter.dll" `
-                "$buildPath\PDFtoImage.dll" `
-                "$buildPath\SkiaSharp.dll" `
-                "$buildPath\System.Buffers.dll" `
-                "$buildPath\System.Memory.dll" `
-                "$buildPath\System.Numerics.Vectors.dll" `
-                "$buildPath\System.Runtime.CompilerServices.Unsafe.dll" `
-                "$buildPath\System.Diagnostics.DiagnosticSource.dll" `
-                "$buildPath\System.Threading.Tasks.Extensions.dll"
- 
-        $buildPath = "${{ github.workspace }}\bin\Debug\net8.0\win-x86\publish"
-        New-Item -Path "$buildPath\merged" -ItemType Directory -Force
-        ilrepack /out:"$buildPath\merged\PdfToImageConverter.dll" `
-                /lib:"$buildPath" `
-                /union `
-                /copyattrs `
-                /internalize `
-                /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
-                "$buildPath\PdfToImageConverter.dll" `
-                "$buildPath\PDFtoImage.dll" `
-                "$buildPath\SkiaSharp.dll"
-        
+        $nativeNames = @("pdfium.dll", "libSkiaSharp.dll")
+        $inputs = @(Get-ChildItem $buildPath -Filter *.dll | Where-Object { $nativeNames -notcontains $_.Name } | ForEach-Object { $_.FullName })
+        $ilArgs = @(
+                "/out:$buildPath\merged\PdfToImageConverter.dll",
+                "/lib:$buildPath",
+                "/targetplatform:v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319",
+                "/union",
+                "/copyattrs",
+                "/internalize",
+                "/keyfile:$snk"
+            ) + $inputs
+        & ilrepack @ilArgs
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     - name: Prepare test execution
       run: |
-        $buildPath = "${{ github.workspace }}\bin\Debug\net481\win-x86"
-        Remove-Item -Path $buildPath\PdfToImageConverter.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\PDFtoImage.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\SkiaSharp.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\System.Buffers.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\System.Memory.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\System.Numerics.Vectors.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\System.Runtime.CompilerServices.Unsafe.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\System.Diagnostics.DiagnosticSource.dll -Force -ErrorAction SilentlyContinue
-        Remove-Item -Path $buildPath\System.Threading.Tasks.Extensions.dll -Force -ErrorAction SilentlyContinue
+        $buildPath = "${{ github.workspace }}\src\PdfToImageConverter\bin\Debug\net481\win-x86"
+        $nativeNames = @("pdfium.dll", "libSkiaSharp.dll")
+        Get-ChildItem $buildPath -Filter *.dll | Where-Object { $nativeNames -notcontains $_.Name } | Remove-Item -Force
         Move-Item -Path $buildPath\merged\PdfToImageConverter.dll -Destination $buildPath
 
     - name: Run Integration Tests with COM object and PowerShell
@@ -120,7 +104,7 @@ jobs:
                 Start-Sleep -Seconds 1
 
                 # Define source and destination paths
-                $sourceDir = "..\bin\Debug\net481\win-x86"
+                $sourceDir = "..\src\PdfToImageConverter\bin\Debug\net481\win-x86"
                 $destDir = "."
 
                 Write-Host "`nCopying build artifacts from: $sourceDir"
@@ -322,4 +306,13 @@ jobs:
         }
         
         Write-Host "net481 dll's COM tests completed successfully"
+
+    - name: Publish Native AOT win-x86
+      run: dotnet publish src/PdfToImageConverter/PdfToImageConverter.csproj -f net10.0 -r win-x86 -c Release -p:NativeAot=true -o artifacts/native-aot/win-x86
+
+    - name: Smoke test Native AOT exports
+      shell: pwsh
+      run: |
+        & "$env:windir\SysWOW64\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -File "${{ github.workspace }}\scripts\smoke-aot.ps1" -PublishDir "${{ github.workspace }}\artifacts\native-aot\win-x86" -PdfPath "${{ github.workspace }}\test\test.pdf"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         

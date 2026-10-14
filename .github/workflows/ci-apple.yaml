@@ -1,0 +1,41 @@
+name: CI tests about Apple interop
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+
+jobs:
+  apple:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install Apple workloads
+        run: dotnet workload install ios macos maccatalyst
+
+      - name: Publish managed Apple libraries
+        run: |
+          set -euo pipefail
+          proj=src/PdfToImageConverter/PdfToImageConverter.csproj
+          dotnet publish "$proj" -f net10.0 -r osx-x64 -c Release -o artifacts/release/net10/managed/osx-x64
+          dotnet publish "$proj" -f net10.0 -r osx-arm64 -c Release -o artifacts/release/net10/managed/osx-arm64
+          dotnet publish "$proj" -f net10.0-ios -r ios-arm64 -c Release -o artifacts/release/net10/managed/net10.0-ios
+          dotnet publish "$proj" -f net10.0-macos -r osx-arm64 -c Release -o artifacts/release/net10/managed/net10.0-macos
+          dotnet publish "$proj" -f net10.0-maccatalyst -r maccatalyst-arm64 -c Release -o artifacts/release/net10/managed/net10.0-maccatalyst
+
+      - name: Package Native AOT xcframeworks
+        run: bash scripts/package-apple-xcframework.sh artifacts/release

@@ -13,23 +13,42 @@ but other COM or anyway to invoke .NET(C#) DLL invoking way can works
 - Maintains original PDF dimensions
 - Supports multi-page PDFs
 - Configurable DPI settings
-- COM-visible for use in PowerBuilder
+- .NET Framework 4.8.1 COM library for PowerBuilder .NET DLL Importer
+- .NET 10 managed DLL
+- .NET 10 Native AOT library for Windows x86/x64/arm64 and macOS/iOS interop
 
 ## Requirements
 
-- .NET Framework 4.8.1 SDK for Development with build tool(select 1 of 2 options)
-   - Visual Studio 2019 or later for building the library
-   - .NET 8 SDK for building the library
-- PowerBuilder 2019 R3 or later
+- .NET 10 SDK
+- .NET Framework 4.8.1 targeting pack, for the COM build
+- PowerBuilder 2019 R3 or later for the .NET DLL Importer sample
 
 ## Building the Library
 
-1. Open the solution in Visual Studio
-2. Build the solution in Release mode
-3. if you want to build with dotnet cli(cause of not having visual studio)
-   ```powershell
-   dotnet build PdfToImageConverter.csproj --configuration Release
-   ```
+```powershell
+dotnet build PdfToImageConverter.slnx --configuration Release
+dotnet test tests\PdfToImageConverter.Tests\PdfToImageConverter.Tests.csproj --configuration Release
+```
+
+Windows release layout (Framework, .NET 10 managed, and Native AOT):
+
+```powershell
+./scripts/publish-windows.ps1
+```
+
+Apple Native AOT frameworks are packaged on macOS:
+
+```bash
+bash scripts/package-apple-xcframework.sh artifacts/release
+```
+
+## Deployment layouts
+
+- `net481/win-x86/`: delay-signed inputs are ILRepack-merged into one COM DLL, plus `pdfium.dll` and `libSkiaSharp.dll`
+- `net10/managed/{rid}/`: ordinary .NET 10 DLL. Windows RIDs are `win-x86`, `win-x64`, and `win-arm64`. macOS RIDs are `osx-x64` and `osx-arm64`. Platform assemblies are `net10.0-ios`, `net10.0-macos`, and `net10.0-maccatalyst`
+- `native-aot/win-x86`, `win-x64`, `win-arm64`: stdcall exports. Keep `pdfium.dll` and `libSkiaSharp.dll` beside `PdfToImageConverter.dll`
+- `native-aot/osx-x64`, `osx-arm64`: `PdfToImageConverter.dylib` with PDFium and Skia beside it
+- `apple/PdfToImageConverter.xcframework`, `apple/pdfium.xcframework`, `apple/libSkiaSharp.xcframework`: iOS device, iOS simulator, and Mac Catalyst
 
 ## Usage in PowerBuilder
 
@@ -37,8 +56,7 @@ but other COM or anyway to invoke .NET(C#) DLL invoking way can works
    - Open your PowerBuilder project
    - Select Tools → ".NET DLL Importer"
    - Browse to and select "PdfToImageConverter.dll"
-     - Un-Zip release assets and select "PdfToImageConverter.dll"
-     - Asset name is "PdfToImageConverter-Full.zip"
+     - Un-Zip release assets and select `net481/win-x86/PdfToImageConverter.dll` from "PdfToImageConverter-Full.zip"
    - Generate the proxy object
 
 2. Create an instance of the converter:
@@ -118,16 +136,52 @@ If you want to specify custom output paths for each page, you can use `ConvertPd
 
 ## Error Handling
 
-The conversion method returns a string starting with either "SUCCESS" or "ERROR" followed by additional details. Make sure to handle both cases in your PowerBuilder code as shown in the usage example above. 
+The conversion method returns a string starting with either "SUCCESS" or "ERROR" followed by additional details. Make sure to handle both cases in your PowerBuilder code as shown in the usage example above.
+
+## .NET 10 managed DLL
+
+Publish without Native AOT and reference `PdfToImageConverter.dll` from a .NET 10 app. Place the RID's `pdfium` and `libSkiaSharp` native library next to the application.
+
+```powershell
+dotnet publish src\PdfToImageConverter\PdfToImageConverter.csproj -f net10.0 -r win-x64 -c Release -o .\publish\net10\managed\win-x64
+```
+
+`PdfConverter` is a normal public class. It is not COM-visible on .NET 10. The three methods and their `SUCCESS:` / `Error:` strings are the same as the Framework library.
+
+## Native AOT
+
+Native AOT publishes a shared library. Windows exports use stdcall. Apple exports use the platform C calling convention. Strings are UTF-16 (`char16_t` in `include/PdfToImageConverter.h`, not Apple `wchar_t`).
+
+```powershell
+dotnet publish src\PdfToImageConverter\PdfToImageConverter.csproj -f net10.0 -r win-x64 -c Release -p:NativeAot=true -o .\publish\native-aot\win-x64
+```
+
+Return `0` on success, `-1` for a null path, and `-2` when conversion fails. The managed `SUCCESS:` / `Error:` text is written into a caller-allocated UTF-16 buffer. Page names and output folders are one UTF-16 string separated by line breaks.
+
+PowerBuilder external functions, for a DLL whose bitness matches the application:
+
+```powerbuilder
+FUNCTION long ConvertPdfToImage(string pdfPath, string outputPath, long dpi, ref string message, long messageChars) LIBRARY "PdfToImageConverter.dll"
+FUNCTION long ConvertPdfToImageWithPageNames(string pdfPath, string outputPath, long dpi, long totalPages, string pageNames, ref string message, long messageChars) LIBRARY "PdfToImageConverter.dll"
+FUNCTION long ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string outputPath, long dpi, long totalPages, string pageNames, string pagePaths, ref string message, long messageChars) LIBRARY "PdfToImageConverter.dll"
+```
+
+```powerbuilder
+string ls_message
+ls_message = Space(2048)
+long ll_code
+ll_code = ConvertPdfToImage("C:\input.pdf", "C:\output.png", 300, ls_message, 2048)
+```
+
+Join page names with `~n`, for example `"Apple~nBanana"`. Do not add `CDECL` on Windows. `samples/CppSample` loads the same stdcall export with `LoadLibraryW`.
+
+The existing PowerBuilder test executable still loads the .NET Framework DLL through `nvo_pdfconverter`. Rebuild that executable in the PowerBuilder IDE only if you switch the test application to these external functions.
+
+iOS and Mac Catalyst apps embed `PdfToImageConverter.xcframework`, `pdfium.xcframework`, and `libSkiaSharp.xcframework`.
 
 ## Acknowledgements
 
 - [PDFtoImage](https://github.com/sungaila/PDFtoImage) for the PDF conversion library
-
-
-Certainly! Here’s a COM-based usage example you can add to your README for users who want to use the PDF-Image Converter .NET DLL via COM (e.g., from VBScript, VBA, or other COM-aware environments).
-
----
 
 ## Usage via COM (VBScript Example)
 

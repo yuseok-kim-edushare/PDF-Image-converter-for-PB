@@ -12,175 +12,144 @@ permissions:
   discussions: write
 
 jobs:
-  deploy:
+  windows:
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: windows-2025
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v7
-      with:
-        fetch-tags: true
-        fetch-depth: 0
-        ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
-    - name: Cache NuGet packages
-      uses: actions/cache@v6
-      with:
-        path: ${{ github.workspace }}/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.sln*', '**/*.csproj*') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
 
-    - name: Restore dependencies
-      run: |
-        dotnet workload install maccatalyst
-        dotnet restore PdfToImageConverter.csproj
-    
-    - name: Build solution for release
-      run: |
-        dotnet build PdfToImageConverter.csproj --configuration Release --no-restore -f net481
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net8.0
-        dotnet publish PdfToImageConverter.csproj --configuration Release --no-restore -f net10.0-maccatalyst
+      - name: Publish Windows distributions
+        shell: pwsh
+        run: ./scripts/publish-windows.ps1 -OutputRoot artifacts/release
 
-    - name: Install ILRepack
-      run: |
-        try {
-             dotnet tool install -g dotnet-ilrepack
-         } catch {
-             Write-Host "Error installing ILRepack: $_" -ForegroundColor Red
-         }
+      - name: Upload Windows distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: artifacts/release
+          if-no-files-found: error
 
-    - name: Prepare Release Files
-      shell: pwsh
-      run: |
-        # Define paths
-        $buildPath = "${{ github.workspace }}\bin\Release\net481\win-x86"
-        $releaseDir = "${{ github.workspace }}\release-files"
-        
-        # Create release directory
-        New-Item -Path $releaseDir -ItemType Directory -Force
-        New-Item -Path $releaseDir\net481 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net8.0 -ItemType Directory -Force
-        New-Item -Path $releaseDir\net10.0-maccatalyst -ItemType Directory -Force
+  apple:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
-        # Copy all build artifacts recursively
-        if (Test-Path $buildPath) {
-            Copy-Item -Path "$buildPath\x86\*" -Destination $releaseDir\net481 -Recurse -Force
-            Write-Host "Copied native dlls from $buildPath to $releaseDir"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
 
-            # Merge NET 4.8.1 DLLs (using ILRepack)
-            ilrepack /out:"$releaseDir\net481\PdfToImageConverter.dll" `
-                /lib:"$buildPath" `
-                /targetplatform:"v4,C:\Windows\Microsoft.NET\Framework\v4.0.30319" `
-                /union `
-                /copyattrs `
-                /internalize `
-                /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
-                "$buildPath\PdfToImageConverter.dll" `
-                "$buildPath\PDFtoImage.dll" `
-                "$buildPath\SkiaSharp.dll" `
-                "$buildPath\System.Buffers.dll" `
-                "$buildPath\System.Memory.dll" `
-                "$buildPath\System.Numerics.Vectors.dll" `
-                "$buildPath\System.Runtime.CompilerServices.Unsafe.dll" `
-                "$buildPath\System.Diagnostics.DiagnosticSource.dll" `
-                "$buildPath\System.Threading.Tasks.Extensions.dll"
+      - name: Install Apple workloads
+        run: dotnet workload install ios macos maccatalyst
 
-            # Delete unnecessary files
-            $filesToDelete = @(
-                "$releaseDir\libpdfium.so"
-            )
+      - name: Publish managed Apple libraries
+        run: |
+          set -euo pipefail
+          proj=src/PdfToImageConverter/PdfToImageConverter.csproj
+          dotnet publish "$proj" -f net10.0 -r osx-x64 -c Release -o artifacts/release/net10/managed/osx-x64
+          dotnet publish "$proj" -f net10.0 -r osx-arm64 -c Release -o artifacts/release/net10/managed/osx-arm64
+          dotnet publish "$proj" -f net10.0-ios -r ios-arm64 -c Release -o artifacts/release/net10/managed/net10.0-ios
+          dotnet publish "$proj" -f net10.0-macos -r osx-arm64 -c Release -o artifacts/release/net10/managed/net10.0-macos
+          dotnet publish "$proj" -f net10.0-maccatalyst -r maccatalyst-arm64 -c Release -o artifacts/release/net10/managed/net10.0-maccatalyst
 
-            foreach ($file in $filesToDelete) {
-                if (Test-Path $file) {
-                    Remove-Item -Path $file -Force
-                    Write-Host "Deleted: $file"
-                }
-            }
-            
-            # List remaining files for verification
-            Write-Host "`nFiles included in release:"
-            Get-ChildItem -Path $releaseDir -Recurse | Where-Object { !$_.PSIsContainer } | ForEach-Object {
-                Write-Host $_.FullName.Replace($releaseDir, '')
-            }
-        } else {
-            Write-Host "::error::Build output directory not found at: $buildPath"
-            exit 1
-        }
+      - name: Package Native AOT xcframeworks
+        run: bash scripts/package-apple-xcframework.sh artifacts/release
 
-        # merge and copy net8.0
-        $buildPath = "${{ github.workspace }}\bin\Release\net8.0\win-x86\publish"
-        Copy-Item -Path "$buildPath\pdfium.dll" -Destination $releaseDir\net8.0
-        Copy-Item -Path "$buildPath\libSkiaSharp.dll" -Destination $releaseDir\net8.0
+      - name: Upload Apple distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: apple-dist
+          path: artifacts/release
+          if-no-files-found: error
 
-        ilrepack /out:"$releaseDir\net8.0\PdfToImageConverter-net8.0.dll" `
-            /lib:"$buildPath" `
-            /union `
-            /copyattrs `
-            /internalize `
-            /keyfile:"${{ github.workspace }}\PdfToImageConverter.snk" `
-            "$buildPath\PdfToImageConverter.dll" `
-            "$buildPath\PDFtoImage.dll" `
-            "$buildPath\SkiaSharp.dll"
+  release:
+    needs: [windows, apple]
+    runs-on: windows-2025
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-tags: true
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
-        # copy net10.0-maccatalyst
-        # $buildPath = "${{ github.workspace }}\bin\Release\net10.0-maccatalyst\macos-arm64"
-        # Rename-Item -Path "$buildPath\PdfToImageConverter.dll" -NewName "PdfToImageConverter-net10.0-maccatalyst.dll"
-        # Copy-Item -Path "$buildPath\*" -Destination $releaseDir\net10.0-maccatalyst -Recurse -Force
-        
-        # Create ZIP archive
-        Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
-        
-    - name: Get latest release version and Generate release notes
-      id: get_latest_release
-      shell: pwsh
-      run: |
-        $latest_release = git tag --list --sort=-version:refname | Where-Object { $_ -match '^\d+\.\d+\.\d+$' } | Select-Object -First 1
+      - name: Download distributions
+        uses: actions/download-artifact@v4
+        with:
+          path: release-parts
 
-        if ($latest_release) {
-          Write-Output "Latest release version: $latest_release"
-          echo "latest_release=$latest_release" >> $env:GITHUB_ENV
+      - name: Assemble release ZIP
+        shell: pwsh
+        run: |
+          $releaseDir = "${{ github.workspace }}\release-files"
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+          Copy-Item -Path "${{ github.workspace }}\release-parts\windows-dist\*" -Destination $releaseDir -Recurse -Force
+          Copy-Item -Path "${{ github.workspace }}\release-parts\apple-dist\*" -Destination $releaseDir -Recurse -Force
+          Compress-Archive -Path "$releaseDir\*" -DestinationPath "$releaseDir\PdfToImageConverter-Full.zip" -Force
 
-          $version = [Version]$latest_release
-          $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
+      - name: Get latest release version and Generate release notes
+        id: get_latest_release
+        shell: pwsh
+        run: |
+          $latest_release = git tag --list --sort=-version:refname | Where-Object { $_ -match '^\d+\.\d+\.\d+$' } | Select-Object -First 1
 
-          $releaseNotes = "## Changes since " + $latest_release + "`n"
-          $releaseNotes += (git log "$latest_release..HEAD" --oneline) -join "`n"
-          $releaseNotes += "`n"
-          $releaseNotes += "### File edited `n"
-          $releaseNotes += "`n"
-          $releaseNotes += (git diff "$latest_release..HEAD" --compact-summary) -join "`n"
-        } else {
-          Write-Output "No previous release found. Creating initial release 0.0.1"
-          $newVersionString = "0.0.1"
-          
-          $releaseNotes = "## Initial Release v0.0.1`n"
-          $releaseNotes += (git log --oneline) -join "`n"
-          $releaseNotes += "`n"
-          $releaseNotes += "### Files included `n"
-          $releaseNotes += "`n"
-          $releaseNotes += (git ls-files | ForEach-Object { "Added $_" }) -join "`n"
-        }
+          if ($latest_release) {
+            Write-Output "Latest release version: $latest_release"
+            echo "latest_release=$latest_release" >> $env:GITHUB_ENV
 
-        echo "new_release=$newVersionString" >> $env:GITHUB_ENV
-        $releaseNotes | Out-File -FilePath releaseNotes.txt -Encoding utf8
-        $releaseNotesContent = Get-Content -Path releaseNotes.txt -Raw
-        echo "release_notes<<EOF" >> $env:GITHUB_ENV
-        echo "$releaseNotesContent" >> $env:GITHUB_ENV
-        echo "EOF" >> $env:GITHUB_ENV
+            $version = [Version]$latest_release
+            $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
 
-        
-    - name: Create Release
-      uses: softprops/action-gh-release@v3
-      with:
-        files: |
-          ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
-          ${{ github.workspace }}\release-files\net481\PdfToImageConverter.dll
-          ${{ github.workspace }}\release-files\net8.0\PdfToImageConverter-net8.0.dll
-        tag_name: ${{ env.new_release }}
-        name: Release ${{ env.new_release }}
-        body: ${{ env.release_notes }}
-        draft: false
-        prerelease: false
-        fail_on_unmatched_files: true
+            $releaseNotes = "## Changes since " + $latest_release + "`n"
+            $releaseNotes += (git log "$latest_release..HEAD" --oneline) -join "`n"
+            $releaseNotes += "`n"
+            $releaseNotes += "### File edited `n"
+            $releaseNotes += "`n"
+            $releaseNotes += (git diff "$latest_release..HEAD" --compact-summary) -join "`n"
+          } else {
+            Write-Output "No previous release found. Creating initial release 0.0.1"
+            $newVersionString = "0.0.1"
+
+            $releaseNotes = "## Initial Release v0.0.1`n"
+            $releaseNotes += (git log --oneline) -join "`n"
+            $releaseNotes += "`n"
+            $releaseNotes += "### Files included `n"
+            $releaseNotes += "`n"
+            $releaseNotes += (git ls-files | ForEach-Object { "Added $_" }) -join "`n"
+          }
+
+          echo "new_release=$newVersionString" >> $env:GITHUB_ENV
+          $releaseNotes | Out-File -FilePath releaseNotes.txt -Encoding utf8
+          $releaseNotesContent = Get-Content -Path releaseNotes.txt -Raw
+          echo "release_notes<<EOF" >> $env:GITHUB_ENV
+          echo "$releaseNotesContent" >> $env:GITHUB_ENV
+          echo "EOF" >> $env:GITHUB_ENV
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            ${{ github.workspace }}\release-files\PdfToImageConverter-Full.zip
+            ${{ github.workspace }}\release-files\net481\win-x86\PdfToImageConverter.dll
+          tag_name: ${{ env.new_release }}
+          name: Release ${{ env.new_release }}
+          body: ${{ env.release_notes }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true

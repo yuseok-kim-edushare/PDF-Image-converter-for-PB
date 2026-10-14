@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PdfToImageConverter/PdfToImageConverter.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PdfToImageConverter.Tests/PdfToImageConverter.Tests.csproj" />
+  </Folder>
+</Solution>

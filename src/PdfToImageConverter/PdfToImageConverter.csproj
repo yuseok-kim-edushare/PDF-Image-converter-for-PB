@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="PDFtoImage" />
+    <PackageReference Include="SkiaSharp" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net481' Or '$(TargetFramework)' == 'net10.0'">
+    <PackageReference Include="SkiaSharp.NativeAssets.Win32" />
+    <PackageReference Include="bblanchon.PDFium.Win32" />
+    <PackageReference Include="SkiaSharp.NativeAssets.macOS" />
+    <PackageReference Include="bblanchon.PDFium.macOS" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
+    <PackageReference Include="SkiaSharp.NativeAssets.iOS" />
+    <PackageReference Include="bblanchon.PDFium.iOS" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-maccatalyst'">
+    <PackageReference Include="SkiaSharp.NativeAssets.MacCatalyst" />
+    <PackageReference Include="bblanchon.PDFium.iOS" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-macos'">
+    <PackageReference Include="SkiaSharp.NativeAssets.macOS" />
+    <PackageReference Include="bblanchon.PDFium.macOS" />
+  </ItemGroup>
+
+  <Target Name="HoistNativeRuntimeAssets" AfterTargets="Publish">
+    <ItemGroup>
+      <_HoistNative Include="$(PublishDir)runtimes\**\native\*.dll" />
+      <_HoistNative Include="$(PublishDir)runtimes\**\native\*.dylib" />
+      <_HoistNative Include="$(PublishDir)runtimes\**\native\*.so" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_HoistNative)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="'@(_HoistNative)' != ''" />
+  </Target>
+</Project>

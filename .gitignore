@@ -10,6 +10,15 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+artifacts/
+publish/
+release-files/
+
+# Native AOT / C++ build output
+build/
+*.pdb
+*.ilk
+*.exp
 x64/
 x86/
 [Aa][Rr][Mm]/

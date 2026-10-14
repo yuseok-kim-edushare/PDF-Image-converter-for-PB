@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <TargetFrameworks>net481;net10.0</TargetFrameworks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <TargetFrameworks>net10.0</TargetFrameworks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>false</IsAotCompatible>
+    <RootNamespace>PdfToImageConverter.Tests</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net481'">
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\PdfToImageConverter\PdfToImageConverter.csproj" />
+  </ItemGroup>
+
+  <!-- net481 output is delay-signed. Re-sign the test copy so the Framework host can load it. -->
+  <Target Name="ResignFrameworkDependency" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net481'">
+    <PropertyGroup>
+      <_SnExe>C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8.1 Tools\sn.exe</_SnExe>
+      <_SnExe Condition="!Exists('$(_SnExe)')">C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\sn.exe</_SnExe>
+    </PropertyGroup>
+    <Exec Command="&quot;$(_SnExe)&quot; -R &quot;$(TargetDir)PdfToImageConverter.dll&quot; &quot;$(MSBuildThisFileDirectory)..\..\PdfToImageConverter.snk&quot;" />
+  </Target>
+
+  <ItemGroup>
+    <None Include="..\..\test\test.pdf" Link="test.pdf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

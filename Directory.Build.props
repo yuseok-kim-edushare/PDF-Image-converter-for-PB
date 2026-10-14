@@ -1,39 +1,63 @@
 <Project>
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT' or $([MSBuild]::IsOSPlatform('OSX'))">
-    <TargetFrameworks>net481;net8.0;net10.0-maccatalyst</TargetFrameworks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT' and !$([MSBuild]::IsOSPlatform('OSX'))">
-    <TargetFrameworks>net481;net8.0</TargetFrameworks>
-  </PropertyGroup>
-
   <PropertyGroup>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <LangVersion>latest</LangVersion>
-    <RootNamespace>PdfToImageConverter</RootNamespace>
-    <AssemblyName>PdfToImageConverter</AssemblyName>
-    <AssemblyTitle>PdfToImageConverter</AssemblyTitle>
-    <Description>PDF to Image Converter COM Library</Description>
     <Company>YuSeok Kim</Company>
     <Product>PdfToImageConverter</Product>
     <Copyright>Copyright © 2025</Copyright>
     <Trademark>YuSeok Kim</Trademark>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)PdfToImageConverter.snk</AssemblyOriginatorKeyFile>
-    <DelaySign>true</DelaySign>
-    <ComVisible>true</ComVisible>
-    <Guid>7402F27D-79BB-44EA-92B4-B6492F74C6EC</Guid>
+    <Authors>YuSeok Kim</Authors>
+    <Description>PDF to Image Converter for PowerBuilder</Description>
     <AssemblyVersion>1.3.2</AssemblyVersion>
     <FileVersion>1.3.2</FileVersion>
+    <Version>1.3.2</Version>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-maccatalyst'">
-    <RuntimeIdentifier>maccatalyst-arm64</RuntimeIdentifier>
-    <ComVisible>false</ComVisible>
-    <DelaySign>false</DelaySign>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter'">
+    <RootNamespace>PdfToImageConverter</RootNamespace>
+    <AssemblyName>PdfToImageConverter</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <_BaseTfms Condition="'$(OS)' == 'Windows_NT'">net481;net10.0</_BaseTfms>
+    <_BaseTfms Condition="'$(OS)' != 'Windows_NT'">net10.0</_BaseTfms>
+    <_AppleTfms Condition="$([MSBuild]::IsOSPlatform('OSX')) Or '$(IncludeAppleTargets)' == 'true'">;net10.0-macos;net10.0-ios;net10.0-maccatalyst</_AppleTfms>
+    <TargetFrameworks>$(_BaseTfms)$(_AppleTfms)</TargetFrameworks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' != 'net10.0-maccatalyst'">
+  <!-- COM, delay-sign, and the 32-bit RID stay on the .NET Framework deployment. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter' And '$(TargetFramework)' == 'net481'">
     <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <SignAssembly>true</SignAssembly>
+    <DelaySign>true</DelaySign>
+    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)PdfToImageConverter.snk</AssemblyOriginatorKeyFile>
+    <ComVisible>true</ComVisible>
+    <Guid>7402F27D-79BB-44EA-92B4-B6492F74C6EC</Guid>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter'">
+    <_IsAppleRid Condition="$(RuntimeIdentifier.StartsWith('osx')) Or $(RuntimeIdentifier.StartsWith('ios')) Or $(RuntimeIdentifier.StartsWith('maccatalyst'))">true</_IsAppleRid>
+  </PropertyGroup>
+
+  <!-- Native AOT is opt-in so ordinary net10 builds stay managed DLLs. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter' And '$(NativeAot)' == 'true' And '$(TargetFramework)' != 'net481'">
+    <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
+    <SelfContained>true</SelfContained>
+    <IsAotCompatible>true</IsAotCompatible>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <!-- Do not set RuntimeIdentifiers to every RID here. The SDK then requires a
+         Microsoft.NETCore.App runtime pack for each one, including iOS packs that
+         are not installed on Windows. Publish with -r instead. -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter' And '$(NativeAot)' == 'true' And '$(_IsAppleRid)' == 'true'">
+    <PublishAotUsingRuntimePack>true</PublishAotUsingRuntimePack>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter' And '$(NativeAot)' == 'true' And $(RuntimeIdentifier.StartsWith('win-'))">
+    <DefineConstants>$(DefineConstants);PDFCONVERTER_WINDOWS</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter' And '$(NativeAot)' == 'true' And '$(_IsAppleRid)' == 'true'">
+    <LinkerArg Include="-Wl,-rpath,%40loader_path" />
+  </ItemGroup>
 </Project>

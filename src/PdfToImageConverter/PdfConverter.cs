@@ -5,13 +5,16 @@ using System;
 using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
+#if NETFRAMEWORK
 using System.Runtime.InteropServices;
+#endif
 using System.Collections.Concurrent;
 using PDFtoImage;
 using SkiaSharp;
 
 namespace PdfToImageConverter
 {
+#if NETFRAMEWORK
     [ComVisible(true)]
     [Guid("B8B9E0C1-D513-4D8A-B11F-4A10E3D0C1A9")]
     public interface IPdfConverter
@@ -35,6 +38,9 @@ namespace PdfToImageConverter
     [ComSourceInterfaces(typeof(IPdfConverter))]
     [ProgId("PdfToImageConverter.PdfConverter")]
     public class PdfConverter : IPdfConverter
+#else
+    public class PdfConverter
+#endif
     {
         private static readonly string TEMP_DIR = Path.Combine(Path.GetTempPath(), "Powerbuilder-pdf2img");
         private static readonly object _initLock = new object();
@@ -63,8 +69,11 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"Error Message: {ex.Message}\n");
                 File.AppendAllText(logPath, $"Stack Trace:\n{ex.StackTrace}\n");
                 
-                // Rethrow with more specific message for COM clients
+#if NETFRAMEWORK
                 throw new COMException($"Failed to initialize PdfConverter: {ex.Message}", ex);
+#else
+                throw new InvalidOperationException($"Failed to initialize PdfConverter: {ex.Message}", ex);
+#endif
             }
         }
 
@@ -79,7 +88,9 @@ namespace PdfToImageConverter
                 File.AppendAllText(logPath, $"64-bit OS: {Environment.Is64BitOperatingSystem}\n");
                 File.AppendAllText(logPath, $"64-bit Process: {Environment.Is64BitProcess}\n");
                 File.AppendAllText(logPath, $"Current Directory: {Environment.CurrentDirectory}\n");
+#if NETFRAMEWORK
                 File.AppendAllText(logPath, $"Module Path: {System.Reflection.Assembly.GetExecutingAssembly().Location}\n");
+#endif
 
                 // Ensure temp directory exists
                 if (!Directory.Exists(TEMP_DIR))
@@ -97,13 +108,21 @@ namespace PdfToImageConverter
                 catch (DllNotFoundException dllEx)
                 {
                     File.AppendAllText(logPath, $"SkiaSharp DLL not found: {dllEx.Message}\n");
+#if NETFRAMEWORK
                     throw new COMException("Failed to load SkiaSharp native dependencies. Please ensure all required DLLs are present.", dllEx);
+#else
+                    throw new InvalidOperationException("Failed to load SkiaSharp native dependencies. Please ensure all required DLLs are present.", dllEx);
+#endif
                 }
                 catch (Exception ex)
                 {
                     File.AppendAllText(logPath, $"SkiaSharp initialization failed: {ex.Message}\n");
                     File.AppendAllText(logPath, $"SkiaSharp error details: {ex}\n");
+#if NETFRAMEWORK
                     throw new COMException("Failed to initialize SkiaSharp. Please ensure all native dependencies are properly installed.", ex);
+#else
+                    throw new InvalidOperationException("Failed to initialize SkiaSharp. Please ensure all native dependencies are properly installed.", ex);
+#endif
                 }
             }
             catch (Exception ex)
@@ -272,8 +291,10 @@ namespace PdfToImageConverter
             return null; // null means validation passed
         }
 
+#if NETFRAMEWORK
         [ComVisible(true)]
         [DispId(1)]
+#endif
         public string ConvertPdfToImage(string pdfPath, string outputPath, int dpi = 300)
         {
             try
@@ -345,8 +366,10 @@ namespace PdfToImageConverter
             }
         }
 
+#if NETFRAMEWORK
         [ComVisible(true)]
         [DispId(2)]
+#endif
         public string ConvertPdfToImageWithPageNames(string pdfPath, string outputPath, int dpi, int totalPagesNumber, string[] pageNames)
         {
             try
@@ -425,8 +448,10 @@ namespace PdfToImageConverter
             }
         }
 
+#if NETFRAMEWORK
         [ComVisible(true)]
         [DispId(3)]
+#endif
         public string ConvertPdfToImageWithPageNamesAndOutputPaths(string pdfPath, string outputPath, int dpi, int totalPagesNumber, string[] pageNames, string[] pagePaths)
         {
             try
