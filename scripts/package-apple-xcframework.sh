@@ -78,10 +78,20 @@ write_plist() {
 EOF
 }
 
+set_install_id() {
+  local src="$1"
+  local id_name="$2"
+  # Prebuilt PDFium/Skia binaries often have no header pad for a longer id.
+  # The framework executable path is what the app and the runtime resolver use.
+  if ! install_name_tool -id "@rpath/${id_name}.framework/${id_name}" "$src"; then
+    echo "warning: kept the existing install name of $src" >&2
+  fi
+}
+
 prepare_ios_slice() {
   local src="$1"
   local id_name="$2"
-  install_name_tool -id "@rpath/${id_name}.framework/${id_name}" "$src"
+  set_install_id "$src" "$id_name"
   if otool -l "$src" | grep -q 'path @executable_path '; then
     install_name_tool -rpath @executable_path @executable_path/Frameworks "$src" || true
   fi
@@ -90,7 +100,7 @@ prepare_ios_slice() {
 prepare_catalyst_slice() {
   local src="$1"
   local id_name="$2"
-  install_name_tool -id "@rpath/${id_name}.framework/Versions/A/${id_name}" "$src"
+  set_install_id "$src" "$id_name"
   if otool -l "$src" | grep -q 'path @executable_path '; then
     install_name_tool -rpath @executable_path @executable_path/../Frameworks "$src" || true
   fi
