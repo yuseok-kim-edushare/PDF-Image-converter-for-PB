@@ -60,7 +60,9 @@ jobs:
         $snk = "${{ github.workspace }}\PdfToImageConverter.snk"
         New-Item -Path "$buildPath\merged" -ItemType Directory -Force
         $nativeNames = @("pdfium.dll", "libSkiaSharp.dll")
-        $inputs = @(Get-ChildItem $buildPath -Filter *.dll | Where-Object { $nativeNames -notcontains $_.Name } | ForEach-Object { $_.FullName })
+        $managed = @(Get-ChildItem $buildPath -Filter *.dll | Where-Object { $nativeNames -notcontains $_.Name })
+        $primary = $managed | Where-Object { $_.Name -eq "PdfToImageConverter.dll" }
+        $inputs = @($primary.FullName) + @($managed | Where-Object { $_.Name -ne "PdfToImageConverter.dll" } | ForEach-Object { $_.FullName })
         $ilArgs = @(
                 "/out:$buildPath\merged\PdfToImageConverter.dll",
                 "/lib:$buildPath",

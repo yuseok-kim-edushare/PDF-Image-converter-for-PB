@@ -42,7 +42,9 @@ if (-not (Get-Command ilrepack -ErrorAction SilentlyContinue)) {
     $env:PATH = "$toolPath;$env:PATH"
 }
 
-$managedInputs = @(Get-ChildItem $buildPath -Filter *.dll | Where-Object { $nativeNames -notcontains $_.Name } | ForEach-Object { $_.FullName })
+$managed = @(Get-ChildItem $buildPath -Filter *.dll | Where-Object { $nativeNames -notcontains $_.Name })
+$primary = $managed | Where-Object { $_.Name -eq "PdfToImageConverter.dll" }
+$managedInputs = @($primary.FullName) + @($managed | Where-Object { $_.Name -ne "PdfToImageConverter.dll" } | ForEach-Object { $_.FullName })
 if ($managedInputs.Count -eq 0) {
     throw "No managed DLLs found in $buildPath"
 }
