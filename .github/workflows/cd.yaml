@@ -108,13 +108,19 @@ jobs:
         shell: pwsh
         run: |
           $latest_release = git tag --list --sort=-version:refname | Where-Object { $_ -match '^\d+\.\d+\.\d+$' } | Select-Object -First 1
+          $headSubject = (git log -1 --format=%s).Trim()
 
           if ($latest_release) {
             Write-Output "Latest release version: $latest_release"
             echo "latest_release=$latest_release" >> $env:GITHUB_ENV
 
-            $version = [Version]$latest_release
-            $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
+            if ($headSubject -match '^\d+\.\d+\.\d+$') {
+              $newVersionString = $headSubject
+              Write-Output "Using version from HEAD commit subject: $newVersionString"
+            } else {
+              $version = [Version]$latest_release
+              $newVersionString = '{0}.{1}.{2}' -f $version.Major, $version.Minor, ($version.Build + 1)
+            }
 
             $releaseNotes = "## Changes since " + $latest_release + "`n"
             $releaseNotes += (git log "$latest_release..HEAD" --oneline) -join "`n"
