@@ -211,6 +211,34 @@ done
 add_osx_rpath osx-x64
 add_osx_rpath osx-arm64
 
+# SkiaSharp ships universal framework binaries, not per-RID dylibs.
+stage_skia() {
+  local ios_bin sim_bin cat_zip cat_dir cat_bin
+  ios_bin="$(find "$NUGET/skiasharp.nativeassets.ios" -type f -path '*/runtimes/ios/native/libSkiaSharp.framework/libSkiaSharp' | sort | tail -n 1)"
+  sim_bin="$(find "$NUGET/skiasharp.nativeassets.ios" -type f -path '*/runtimes/iossimulator/native/libSkiaSharp.framework/libSkiaSharp' | sort | tail -n 1)"
+  cat_zip="$(find "$NUGET/skiasharp.nativeassets.maccatalyst" -type f -name 'libSkiaSharp.framework.zip' | sort | tail -n 1)"
+  if [[ -z "$ios_bin" || -z "$sim_bin" || -z "$cat_zip" ]]; then
+    echo "missing SkiaSharp iOS or Mac Catalyst native assets under $NUGET" >&2
+    exit 1
+  fi
+  cat_dir="$OUT/apple-work/skia-catalyst"
+  rm -rf "$cat_dir"
+  mkdir -p "$cat_dir"
+  unzip -q "$cat_zip" -d "$cat_dir"
+  cat_bin="$cat_dir/libSkiaSharp.framework/Versions/A/libSkiaSharp"
+  if [[ ! -f "$cat_bin" ]]; then
+    echo "missing $cat_bin" >&2
+    exit 1
+  fi
+  lipo -thin arm64 "$ios_bin" -output "$OUT/native-aot/ios-arm64/libSkiaSharp.dylib"
+  lipo -thin arm64 "$sim_bin" -output "$OUT/native-aot/iossimulator-arm64/libSkiaSharp.dylib"
+  lipo -thin x86_64 "$sim_bin" -output "$OUT/native-aot/iossimulator-x64/libSkiaSharp.dylib"
+  lipo -thin arm64 "$cat_bin" -output "$OUT/native-aot/maccatalyst-arm64/libSkiaSharp.dylib"
+  lipo -thin x86_64 "$cat_bin" -output "$OUT/native-aot/maccatalyst-x64/libSkiaSharp.dylib"
+}
+
+stage_skia
+
 pack_library "PdfToImageConverter" "PdfToImageConverter.dylib"
 pack_library "pdfium" "libpdfium.dylib"
 pack_library "libSkiaSharp" "libSkiaSharp.dylib"
