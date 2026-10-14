@@ -13,11 +13,12 @@ publish_rid() {
   local rid="$1"
   local dest="$OUT/native-aot/$rid"
   mkdir -p "$dest"
-  extra=()
+  # macOS bash 3.2 treats an empty array as unbound under set -u.
   if [[ "$rid" == osx-* ]]; then
-    extra+=(-p:UseMonoRuntime=false)
+    dotnet publish "$PROJECT" -f net10.0 -r "$rid" -c Release -p:NativeAot=true -p:UseMonoRuntime=false -o "$dest"
+  else
+    dotnet publish "$PROJECT" -f net10.0 -r "$rid" -c Release -p:NativeAot=true -o "$dest"
   fi
-  dotnet publish "$PROJECT" -f net10.0 -r "$rid" -c Release -p:NativeAot=true "${extra[@]}" -o "$dest"
   copy_natives "$rid" "$dest"
 }
 
