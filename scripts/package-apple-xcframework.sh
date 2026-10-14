@@ -159,28 +159,29 @@ pack_library() {
   cat_arm="$(resolve_file "$OUT/native-aot/maccatalyst-arm64" "$file_name")"
   cat_x64="$(resolve_file "$OUT/native-aot/maccatalyst-x64" "$file_name")"
 
-  cp "$ios_bin" "$work/ios"
+  cp "$ios_bin" "$work/ios-bin"
   cp "$sim_arm" "$work/sim-arm64"
   cp "$sim_x64" "$work/sim-x64"
   cp "$cat_arm" "$work/cat-arm64"
   cp "$cat_x64" "$work/cat-x64"
-  prepare_ios_slice "$work/ios" "$name"
+  prepare_ios_slice "$work/ios-bin" "$name"
   prepare_ios_slice "$work/sim-arm64" "$name"
   prepare_ios_slice "$work/sim-x64" "$name"
   prepare_catalyst_slice "$work/cat-arm64" "$name"
   prepare_catalyst_slice "$work/cat-x64" "$name"
-  lipo -create "$work/sim-arm64" "$work/sim-x64" -output "$work/simulator"
-  lipo -create "$work/cat-arm64" "$work/cat-x64" -output "$work/catalyst"
+  lipo -create "$work/sim-arm64" "$work/sim-x64" -output "$work/simulator-bin"
+  lipo -create "$work/cat-arm64" "$work/cat-x64" -output "$work/catalyst-bin"
 
-  make_ios_framework "$name" "$work/ios" "$work/ios.framework"
-  make_ios_framework "$name" "$work/simulator" "$work/simulator.framework"
-  make_catalyst_framework "$name" "$work/catalyst" "$work/catalyst.framework"
+  # The framework directory name must match the binary. ios.framework makes xcodebuild look for an executable named ios.
+  make_ios_framework "$name" "$work/ios-bin" "$work/device/${name}.framework"
+  make_ios_framework "$name" "$work/simulator-bin" "$work/simulator/${name}.framework"
+  make_catalyst_framework "$name" "$work/catalyst-bin" "$work/catalyst/${name}.framework"
 
   rm -rf "$OUT/apple/${name}.xcframework"
   xcodebuild -create-xcframework \
-    -framework "$work/ios.framework" \
-    -framework "$work/simulator.framework" \
-    -framework "$work/catalyst.framework" \
+    -framework "$work/device/${name}.framework" \
+    -framework "$work/simulator/${name}.framework" \
+    -framework "$work/catalyst/${name}.framework" \
     -output "$OUT/apple/${name}.xcframework"
 }
 
