@@ -10,8 +10,8 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.153.1" />
     <PackageVersion Include="SkiaSharp.NativeAssets.iOS" Version="4.153.1" />
     <PackageVersion Include="SkiaSharp.NativeAssets.MacCatalyst" Version="4.153.1" />
-    <PackageVersion Include="bblanchon.PDFium.Win32" Version="158.0.8111" />
-    <PackageVersion Include="bblanchon.PDFium.macOS" Version="158.0.8111" />
+    <PackageVersion Include="bblanchon.PDFium.Win32" Version="158.0.8125" />
+    <PackageVersion Include="bblanchon.PDFium.macOS" Version="158.0.8125" />
     <PackageVersion Include="bblanchon.PDFium.iOS" Version="157.0.8086" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
