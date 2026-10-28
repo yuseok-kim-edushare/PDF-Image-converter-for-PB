@@ -237,6 +237,36 @@ stage_skia() {
   lipo -thin x86_64 "$cat_bin" -output "$OUT/native-aot/maccatalyst-x64/libSkiaSharp.dylib"
 }
 
+stage_pdfium() {
+  local rid dest source archive work
+  for rid in ios-arm64 iossimulator-arm64 iossimulator-x64 maccatalyst-arm64 maccatalyst-x64; do
+    dest="$OUT/native-aot/$rid/libpdfium.dylib"
+    [[ -f "$dest" ]] && continue
+
+    if [[ "$rid" == maccatalyst-* ]]; then
+      archive="$(find "$NUGET/bblanchon.pdfium.ios" -type f -path "*/runtimes/$rid/native/pdfium.framework.zip" | sort | tail -n 1)"
+      if [[ -z "$archive" ]]; then
+        echo "missing PDFium framework archive for $rid under $NUGET" >&2
+        exit 1
+      fi
+      work="$OUT/apple-work/pdfium-$rid"
+      rm -rf "$work"
+      mkdir -p "$work"
+      unzip -q "$archive" -d "$work"
+      source="$work/pdfium.framework/Versions/A/pdfium"
+    else
+      source="$(find "$NUGET/bblanchon.pdfium.ios" -type f -path "*/runtimes/$rid/native/pdfium.framework/*/lib/pdfium.framework/pdfium" | sort | tail -n 1)"
+    fi
+
+    if [[ ! -f "$source" ]]; then
+      echo "missing PDFium framework binary for $rid under $NUGET" >&2
+      exit 1
+    fi
+    cp "$source" "$dest"
+  done
+}
+
+stage_pdfium
 stage_skia
 
 pack_library "PdfToImageConverter" "PdfToImageConverter.dylib"
