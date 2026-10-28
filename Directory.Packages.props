@@ -8,11 +8,11 @@
     <PackageVersion Include="SkiaSharp" Version="4.154.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.154.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.154.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.iOS" Version="4.153.1" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.MacCatalyst" Version="4.153.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.iOS" Version="4.154.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.MacCatalyst" Version="4.154.0" />
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="158.0.8125" />
     <PackageVersion Include="bblanchon.PDFium.macOS" Version="158.0.8125" />
-    <PackageVersion Include="bblanchon.PDFium.iOS" Version="157.0.8086" />
+    <PackageVersion Include="bblanchon.PDFium.iOS" Version="158.0.8125" />
     <PackageVersion Include="coverlet.collector" Version="10.1.0" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
