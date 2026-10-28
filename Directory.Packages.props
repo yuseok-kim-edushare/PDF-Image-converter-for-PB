@@ -5,9 +5,9 @@
 
   <ItemGroup>
     <PackageVersion Include="PDFtoImage" Version="5.4.0" />
-    <PackageVersion Include="SkiaSharp" Version="4.153.1" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.153.1" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.153.1" />
+    <PackageVersion Include="SkiaSharp" Version="4.154.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Win32" Version="4.154.0" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.macOS" Version="4.154.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.iOS" Version="4.153.1" />
     <PackageVersion Include="SkiaSharp.NativeAssets.MacCatalyst" Version="4.153.1" />
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="158.0.8125" />
