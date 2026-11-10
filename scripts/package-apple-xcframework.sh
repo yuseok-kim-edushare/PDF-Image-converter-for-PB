@@ -15,9 +15,9 @@ publish_rid() {
   mkdir -p "$dest"
   # macOS bash 3.2 treats an empty array as unbound under set -u.
   if [[ "$rid" == osx-* ]]; then
-    dotnet publish "$PROJECT" -f net10.0 -r "$rid" -c Release -p:NativeAot=true -p:UseMonoRuntime=false -o "$dest"
+    dotnet publish "$PROJECT" -f net11.0 -r "$rid" -c Release -p:NativeAot=true -p:UseMonoRuntime=false -o "$dest"
   else
-    dotnet publish "$PROJECT" -f net10.0 -r "$rid" -c Release -p:NativeAot=true -o "$dest"
+    dotnet publish "$PROJECT" -f net11.0 -r "$rid" -c Release -p:NativeAot=true -o "$dest"
   fi
   copy_natives "$rid" "$dest"
 }

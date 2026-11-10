@@ -16,9 +16,9 @@
     <RootNamespace>PdfToImageConverter</RootNamespace>
     <AssemblyName>PdfToImageConverter</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <_BaseTfms Condition="'$(OS)' == 'Windows_NT'">net481;net10.0</_BaseTfms>
-    <_BaseTfms Condition="'$(OS)' != 'Windows_NT'">net10.0</_BaseTfms>
-    <_AppleTfms Condition="$([MSBuild]::IsOSPlatform('OSX')) Or '$(IncludeAppleTargets)' == 'true'">;net10.0-macos;net10.0-ios;net10.0-maccatalyst</_AppleTfms>
+    <_BaseTfms Condition="'$(OS)' == 'Windows_NT'">net481;net11.0</_BaseTfms>
+    <_BaseTfms Condition="'$(OS)' != 'Windows_NT'">net11.0</_BaseTfms>
+    <_AppleTfms Condition="$([MSBuild]::IsOSPlatform('OSX')) Or '$(IncludeAppleTargets)' == 'true'">;net11.0-macos;net11.0-ios;net11.0-maccatalyst</_AppleTfms>
     <TargetFrameworks>$(_BaseTfms)$(_AppleTfms)</TargetFrameworks>
   </PropertyGroup>
 
@@ -37,10 +37,12 @@
     <_IsAppleRid Condition="$(RuntimeIdentifier.StartsWith('osx')) Or $(RuntimeIdentifier.StartsWith('ios')) Or $(RuntimeIdentifier.StartsWith('maccatalyst'))">true</_IsAppleRid>
   </PropertyGroup>
 
-  <!-- Native AOT is opt-in so ordinary net10 builds stay managed DLLs. -->
+  <!-- Native AOT is opt-in so ordinary net11 builds stay managed DLLs. -->
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'PdfToImageConverter' And '$(NativeAot)' == 'true' And '$(TargetFramework)' != 'net481'">
     <PublishAot>true</PublishAot>
     <NativeLib>Shared</NativeLib>
+    <!-- .NET 11 prefixes Unix Native AOT libraries with "lib". Keep PdfToImageConverter.dylib. -->
+    <UseNativeLibPrefix>false</UseNativeLibPrefix>
     <SelfContained>true</SelfContained>
     <IsAotCompatible>true</IsAotCompatible>
     <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>

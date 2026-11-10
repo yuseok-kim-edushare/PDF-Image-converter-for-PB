@@ -12,11 +12,11 @@ $nativeNames = @("pdfium.dll", "libSkiaSharp.dll")
 
 function Publish-NativeAotAndManaged {
     param([string]$Rid)
-    $managed = Join-Path $out "net10\managed\$Rid"
+    $managed = Join-Path $out "net11\managed\$Rid"
     $aot = Join-Path $out "native-aot\$Rid"
-    dotnet publish $project -f net10.0 -r $Rid -c $Configuration -o $managed
+    dotnet publish $project -f net11.0 -r $Rid -c $Configuration -o $managed
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-    dotnet publish $project -f net10.0 -r $Rid -c $Configuration -p:NativeAot=true -o $aot
+    dotnet publish $project -f net11.0 -r $Rid -c $Configuration -p:NativeAot=true -o $aot
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 }
 

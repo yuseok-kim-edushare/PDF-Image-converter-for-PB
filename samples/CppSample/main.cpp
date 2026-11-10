@@ -1,7 +1,7 @@
 // Loads the Native AOT PdfToImageConverter.dll and calls ConvertPdfToImage (stdcall, UTF-16).
 //
 // Publish first:
-//   dotnet publish ..\..\src\PdfToImageConverter\PdfToImageConverter.csproj -f net10.0 -r win-x64 -c Release -p:NativeAot=true -o .\publish
+//   dotnet publish ..\..\src\PdfToImageConverter\PdfToImageConverter.csproj -f net11.0 -r win-x64 -c Release -p:NativeAot=true -o .\publish
 // Copy pdfium.dll and libSkiaSharp.dll next to PdfToImageConverter.dll.
 //
 // Usage:

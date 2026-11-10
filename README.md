@@ -14,12 +14,12 @@ but other COM or anyway to invoke .NET(C#) DLL invoking way can works
 - Supports multi-page PDFs
 - Configurable DPI settings
 - .NET Framework 4.8.1 COM library for PowerBuilder .NET DLL Importer
-- .NET 10 managed DLL
-- .NET 10 Native AOT library for Windows x86/x64/arm64 and macOS/iOS interop
+- .NET 11 managed DLL
+- .NET 11 Native AOT library for Windows x86/x64/arm64 and macOS/iOS interop
 
 ## Requirements
 
-- .NET 10 SDK
+- .NET 11 SDK
 - .NET Framework 4.8.1 targeting pack, for the COM build
 - PowerBuilder 2019 R3 or later for the .NET DLL Importer sample
 
@@ -30,7 +30,7 @@ dotnet build PdfToImageConverter.slnx --configuration Release
 dotnet test tests\PdfToImageConverter.Tests\PdfToImageConverter.Tests.csproj --configuration Release
 ```
 
-Windows release layout (Framework, .NET 10 managed, and Native AOT):
+Windows release layout (Framework, .NET 11 managed, and Native AOT):
 
 ```powershell
 ./scripts/publish-windows.ps1
@@ -45,7 +45,7 @@ bash scripts/package-apple-xcframework.sh artifacts/release
 ## Deployment layouts
 
 - `net481/win-x86/`: delay-signed inputs are ILRepack-merged into one COM DLL, plus `pdfium.dll` and `libSkiaSharp.dll`
-- `net10/managed/{rid}/`: ordinary .NET 10 DLL. Windows RIDs are `win-x86`, `win-x64`, and `win-arm64`. macOS RIDs are `osx-x64` and `osx-arm64`. Platform assemblies are `net10.0-ios`, `net10.0-macos`, and `net10.0-maccatalyst`
+- `net11/managed/{rid}/`: ordinary .NET 11 DLL. Windows RIDs are `win-x86`, `win-x64`, and `win-arm64`. macOS RIDs are `osx-x64` and `osx-arm64`. Platform assemblies are `net11.0-ios`, `net11.0-macos`, and `net11.0-maccatalyst`
 - `native-aot/win-x86`, `win-x64`, `win-arm64`: stdcall exports. Keep `pdfium.dll` and `libSkiaSharp.dll` beside `PdfToImageConverter.dll`
 - `native-aot/osx-x64`, `osx-arm64`: `PdfToImageConverter.dylib` with PDFium and Skia beside it
 - `apple/PdfToImageConverter.xcframework`, `apple/pdfium.xcframework`, `apple/libSkiaSharp.xcframework`: iOS device, iOS simulator, and Mac Catalyst
@@ -138,22 +138,22 @@ If you want to specify custom output paths for each page, you can use `ConvertPd
 
 The conversion method returns a string starting with either "SUCCESS" or "ERROR" followed by additional details. Make sure to handle both cases in your PowerBuilder code as shown in the usage example above.
 
-## .NET 10 managed DLL
+## .NET 11 managed DLL
 
-Publish without Native AOT and reference `PdfToImageConverter.dll` from a .NET 10 app. Place the RID's `pdfium` and `libSkiaSharp` native library next to the application.
+Publish without Native AOT and reference `PdfToImageConverter.dll` from a .NET 11 app. Place the RID's `pdfium` and `libSkiaSharp` native library next to the application.
 
 ```powershell
-dotnet publish src\PdfToImageConverter\PdfToImageConverter.csproj -f net10.0 -r win-x64 -c Release -o .\publish\net10\managed\win-x64
+dotnet publish src\PdfToImageConverter\PdfToImageConverter.csproj -f net11.0 -r win-x64 -c Release -o .\publish\net11\managed\win-x64
 ```
 
-`PdfConverter` is a normal public class. It is not COM-visible on .NET 10. The three methods and their `SUCCESS:` / `Error:` strings are the same as the Framework library.
+`PdfConverter` is a normal public class. It is not COM-visible on .NET 11. The three methods and their `SUCCESS:` / `Error:` strings are the same as the Framework library. .NET 11 requires an x86-64-v2 CPU (SSE4.2 and POPCNT). The .NET Framework 4.8.1 COM build does not.
 
 ## Native AOT
 
 Native AOT publishes a shared library. Windows exports use stdcall. Apple exports use the platform C calling convention. Strings are UTF-16 (`char16_t` in `include/PdfToImageConverter.h`, not Apple `wchar_t`).
 
 ```powershell
-dotnet publish src\PdfToImageConverter\PdfToImageConverter.csproj -f net10.0 -r win-x64 -c Release -p:NativeAot=true -o .\publish\native-aot\win-x64
+dotnet publish src\PdfToImageConverter\PdfToImageConverter.csproj -f net11.0 -r win-x64 -c Release -p:NativeAot=true -o .\publish\native-aot\win-x64
 ```
 
 Return `0` on success, `-1` for a null path, and `-2` when conversion fails. The managed `SUCCESS:` / `Error:` text is written into a caller-allocated UTF-16 buffer. Page names and output folders are one UTF-16 string separated by line breaks.
