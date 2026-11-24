@@ -12,8 +12,8 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.iOS" Version="4.155.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.MacCatalyst" Version="4.155.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.155.0" />
-    <PackageVersion Include="bblanchon.PDFium.Win32" Version="160.0.8165" />
-    <PackageVersion Include="bblanchon.PDFium.macOS" Version="160.0.8165" />
+    <PackageVersion Include="bblanchon.PDFium.Win32" Version="160.0.8179" />
+    <PackageVersion Include="bblanchon.PDFium.macOS" Version="160.0.8179" />
     <PackageVersion Include="bblanchon.PDFium.iOS" Version="159.0.8152" />
     <PackageVersion Include="bblanchon.PDFium.Linux" Version="159.0.8152" />
     <PackageVersion Include="xunit.v3" Version="4.0.3" />
